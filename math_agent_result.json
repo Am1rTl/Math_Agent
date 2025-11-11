@@ -1,72 +1,111 @@
 {
-  "problem_id": "prob_8_queens_white",
+  "problem_id": "chess_rook_white_probability",
   "problem_object": {
-    "id": "prob_8_queens_white",
+    "id": "chess_rook_white_probability",
     "statement": "Найдите вероятность того, что при случайной расстановке 8 ладей на шахматной доске так, чтобы они не били друг друга, все ладьи окажутся на белых полях.",
     "entities": [
       {
-        "name": "number_of_queens",
+        "name": "board",
+        "value": "8x8",
+        "unit": "squares"
+      },
+      {
+        "name": "rooks",
         "value": "8",
-        "unit": ""
+        "unit": "pieces"
+      },
+      {
+        "name": "color",
+        "value": "white",
+        "unit": "squares"
       }
     ],
     "constraints": [
-      "Случайная расстановка",
-      "Ладьи не бьют друг друга",
-      "Все ладьи на белых полях"
+      "Rooks do not attack each other",
+      "All rooks on white squares",
+      "Random arrangement"
     ],
     "goals": [
       {
         "type": "value",
-        "target": "вероятность"
+        "target": "probability"
       }
     ],
     "hypotheses": [
       {
-        "formalization": "Расстановка ладей, при которой они не бьют друг друга, соответствует перестановке, где каждая строка и столбец имеют ровно одну ладью.",
+        "formalization": "Random arrangement of 8 rooks on an 8x8 chessboard with no two rooks attacking each other",
         "confidence": 1.0
       },
       {
-        "formalization": "Цвет поля (i,j) определяется как белый, если (i+j) нечетное, черный - если четное, для стандартной шахматной доски.",
+        "formalization": "All rooks are on white squares",
         "confidence": 1.0
       }
     ],
     "irrelevant": [],
-    "notes": "Задача предполагает стандартную шахматную доску 8x8 с 32 белыми и 32 черными полями. Вероятность вычисляется как отношение числа благоприятных расстановок к общему числу расстановок, удовлетворяющих условию не бить друг друга."
+    "notes": "This problem involves calculating the probability that all rooks are placed on white squares given that they are arranged without attacking each other on a standard chessboard. The chessboard has 32 white and 32 black squares."
   },
-  "selected_plan": null,
+  "selected_plan": {
+    "id": "basic_plan",
+    "summary": "Прямое вычисление через Python",
+    "steps": [
+      "Извлечь числовые значения из задачи",
+      "Вычислить промежуточные результаты",
+      "Вычислить финальный результат",
+      "Представить ответ"
+    ],
+    "estimated_complexity": "low",
+    "estimated_tooling": [
+      "Python"
+    ],
+    "heuristic_score": 0.7,
+    "rationale": "Прямой вычислительный подход"
+  },
   "execution_trace": [
     {
       "step_id": "step_0_attempt_1",
-      "thought": "Числовое значение извлечено из задачи: number_of_queens = 8. Это значение соответствует ключевой сущности задачи и будет использоваться в последующих шагах плана.",
+      "thought": "Извлекаю числовые значения из задачи: количество ладей (8), размер доски (8x8, значит 64 клетки), количество белых клеток (32). Эти значения необходимы для последующих вычислений.",
       "action": null,
       "observation": null,
-      "timestamp": 1762895459.9751554
+      "timestamp": 1762897946.905935
     },
     {
       "step_id": "step_1_attempt_1",
-      "thought": "",
+      "thought": "В текущем шаге я должен вычислить промежуточные результаты для задачи. Общее число способов расставить 8 ладей на 8x8 доске без взаимной атаки равно 8! = 40320. Для условия, что все ладьи находятся на белых полях, необходимо, чтобы перестановка сохраняла четность: четные строки отображаются в четкие столбцы, нечетные — в нечетные. Число четных строк и столбцов по 4, поэтому количество таких перестановок равно (4!) * (4!) = 24 * 24 = 576. Таким образом, промежуточные результаты: общее число без атак — 40320, число с белыми клетками — 576.",
       "action": null,
       "observation": null,
-      "timestamp": 1762895506.426773
+      "timestamp": 1762897994.2078617
     },
     {
       "step_id": "step_2_attempt_1",
-      "thought": "",
+      "thought": "В текущем шаге я должен вычислить финальный результат. Из предыдущих рассуждений, общее число способов расставить 8 ладей без взаимной атаки — это 8! = 4032",
       "action": null,
       "observation": null,
-      "timestamp": 1762895582.9323807
+      "timestamp": 1762898044.0848415
     },
     {
       "step_id": "step_3_attempt_1",
-      "thought": "Поскольку текущий шаг плана \"Представить ответ\" является теоретическим и не требует вычислений, я представляю финальный результат вычислений. Вероятность, описанная в задаче, была вычислена в предыдущих шагах и равна [конкретное значение не указано в контексте, но предполагается, что оно было получено].",
-      "action": null,
-      "observation": null,
-      "timestamp": 1762895616.9473135
+      "thought": "Я выполнил вычисление вероятности, используя общее число безопасных расстановок ладей (8! = 40320) и число безопасных расстановок, где все ладьи находятся на белых полях (4! * 4! = 576). Вероятность равна 576 / 40320 = 1/70. Поскольку текущий шаг плана — \"Представить ответ\", и это совпадает с целью найти вероятность, я представляю финальный результат.",
+      "action": {
+        "type": "FINISH",
+        "payload": {
+          "answer": "Вероятность равна 1/70",
+          "value": 0.014285714285714285,
+          "units": "probability"
+        }
+      },
+      "observation": {
+        "status": "completed",
+        "action": "FINISH"
+      },
+      "timestamp": 1762898090.3524606
     }
   ],
   "formal_trace": [],
-  "final_answer": null,
+  "final_answer": {
+    "answer": "Вероятность равна 1/70",
+    "value": 0.014285714285714285,
+    "units": "probability"
+  },
   "verifier_status": "FAIL",
   "verifier_report": {
     "passed_steps": 0,

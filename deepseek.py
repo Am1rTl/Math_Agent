@@ -16,7 +16,7 @@ import itertools
 from openai import OpenAI
 
 # ========== КОНФИГУРАЦИЯ OPENROUTER ==========
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 #DEFAULT_MODEL = "microsoft/phi-4-multimodal-instruct"
 DEFAULT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
 
