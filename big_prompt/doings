@@ -1,0 +1,12 @@
+Added centralized configuration, telemetry, routing, and guardrail utilities so every component reads consistent thresholds, schema paths, sandbox budgets, and tracing settings (settings.py (lines 9-93), telemetry/tracing_init.py (lines 1-88), agent_ops.py (lines 20-212)). This also introduced the reusable SchemaValidator, FewShotRetriever, RoutingManager, LMJudge, aggregated KPIs, and a persistent human‑escalation queue.
+Overhauled the LLM pipeline to use dynamic routing, strict JSON schemas, few‑shot retrieval, and LM‑as‑Judge enforcement. Planner, executor, and verifier prompts now embed relevant examples, trace IDs, and schema hints while every response is validated before orchestration continues (deepseek.py (lines 205-396), deepseek.py (lines 520-665)). FINISH payloads are schema‑checked, tied to the telemetry trace, judged twice with shuffled instructions, and rejected with structured retries plus human escalation when they drift (deepseek.py (lines 1000-1310)).
+Tooling is now safe and observable: CALL_PYTHON runs inside a resource‑limited sandbox process with module blocking and trace spans, while WolframAlpha calls hit the real API and record successes/failures instead of stubs (deepseek.py (lines 580-907)). Execution traces persist stdout/stderr for downstream guardrails and auditing.
+Replaced heuristic final‑answer assembly with schema‑validated FINISH payloads, ensured verifier confidence aggregates correctly, logged KPI deltas, and exported trace IDs across every stage for auditability (deepseek.py (lines 1000-1290)).
+Added the finish JSON schema plus few‑shot data to drive retrieval (schemas/finish.json (lines 1-62), data/few_shot_examples.json (lines 1-40)). Built a regression test suite that checks schema enforcement, judge calibration, metrics math, and eval‑set integrity, and introduced a CLI harness to run offline evals and optional judge calibration for CI gating (tests/evals/test_param_a.py (lines 1-86), scripts/run_evals.py (lines 1-105)).
+Tests
+
+python -m unittest tests.evals.test_param_a
+Next Steps
+
+Run python scripts/run_evals.py --run-agent --eval-judge --max-tasks N once you’re ready to pay for model calls to baseline KPI/judge performance on the gold set.
+Wire scripts/run_evals.py plus the new unittest suite into your CI so schema or prompt regressions fail the build whenever KPIs drop past the configured tolerance.
