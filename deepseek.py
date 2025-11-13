@@ -14,6 +14,7 @@ from contextlib import redirect_stdout, redirect_stderr
 import math
 import itertools
 from openai import OpenAI
+import wolframalpha # <-- ДОБАВЛЕНО
 
 # ========== ИЗМЕНЕНИЕ 1: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ОТЛАДКИ ==========
 DEBUG_MODE = False
@@ -806,34 +807,68 @@ class ToolExecutor:
 	def execute_wolfram(self, query: str, api_key: str, timeout_ms: int = 8000) -> Dict:
 		"""Выполняет запрос к WolframAlpha API"""
 		print(f"--- ВЫЗОВ WOLFRAMALPHA С ЗАПРОСОМ: {query} ---")
+		
+		if not api_key or api_key == "ERP3K8L5L3": # Проверка на ключ-заглушку
+			print("   Ошибка: API-ключ для WolframAlpha не предоставлен.")
+			return {
+				"status": "error",
+				"error": "API-ключ для WolframAlpha не настроен.",
+				"output": "Ошибка: API-ключ для WolframAlpha не настроен.",
+				"result": None,
+				"result_value": None
+			}
+			
 		try:
-			# Эмуляция WolframAlpha для демонстрации
-			if "ладьи" in query.lower() or "rook" in query.lower() or "вероятность" in query.lower():
-				output = "Wolfram Alpha результат:\n"
-				output += "Вероятность: 1/70"
+			client = wolframalpha.Client(api_key)
+			# API wolframalpha использует таймаут в секундах
+			scantimeout_sec = timeout_ms / 1000.0
+			result = client.query(query, scantimeout=scantimeout_sec)
+			
+			if result['@success'] == 'true':
+				# Пытаемся найти основной результат
+				try:
+					text_result = next(result.results).text
+				except StopIteration:
+					# Если .results пуст, ищем поды
+					text_result = "Результат не найден в 'results', см. 'pods'."
+					for pod in result.pods:
+						if pod.get('@title') in ['Result', 'Solution', 'Value']:
+							text_result = pod.text
+							break
+
+				# Собираем все поды для контекста
+				pods_data = []
+				if hasattr(result, 'pods'):
+					for pod in result.pods:
+						pods_data.append({
+							"title": pod.get('@title', 'N/A'),
+							"text": pod.text
+						})
 				
+				print(f"   Результат Wolfram: {text_result}")
 				return {
 					"status": "ok",
-					"output": output,
-					"result": 1/70,
-					"pods": [
-						{"title": "Result", "text": "1/70"},
-						{"title": "Probability", "text": "1/70"}
-					],
+					"output": text_result,
+					"result": text_result,
+					"pods": pods_data,
 					"success": True,
-					"result_value": 1/70
+					"result_value": text_result # Возвращаем текст, т.к. результат может быть нечисловым
 				}
 			else:
+				print("   Запрос к Wolfram не был успешным (success=false).")
 				return {
-					"status": "ok", 
-					"output": f"Результат WolframAlpha для запроса: {query} = 42",
-					"result": 42.0,
-					"pods": [{"title": "Result", "text": "42"}],
-					"success": True,
-					"result_value": 42.0
+					"status": "error",
+					"error": "WolframAlpha query was not successful.",
+					"output": "Запрос к WolframAlpha не был успешным.",
+					"result": None,
+					"result_value": None
 				}
 				
+		except StopIteration:
+			print("   Wolfram не вернул 'results'.")
+			return {"status": "error", "error": "WolframAlpha returned no results.", "output": "WolframAlpha не вернул 'results'.", "result": None, "result_value": None}
 		except Exception as e:
+			print(f"   Ошибка при вызове WolframAlpha: {e}")
 			return {
 				"status": "error",
 				"error": str(e),
@@ -1203,8 +1238,55 @@ class MATHAGENTVL:
 				self.tot_planner.prune_branch(current_plan.id, "План не выполнен успешно или не привел к FINISH")
 				final_answer = None
 		
-		if final_answer is None and previous_outputs:
-			final_answer = self._create_final_answer(previous_outputs, problem_object)
+		# === ИЗМЕНЕНИЕ: ЛОГИКА ВЫЗОВА ВЕРИФИКАТОРА ПРИ ОТСУТСТВИИ 'FINISH' ===
+		if final_answer is None:
+			print("\n   Ни один план не завершился действием 'FINISH'.")
+			if execution_trace and previous_outputs:
+				# Если был выполнен хотя бы один план, пытаемся верифицировать последний результат
+				print("   Запуск финального верификатора на основе последнего вывода...")
+				
+				# 1. Генерируем "предлагаемый" ответ из последнего вывода (как делал старый fallback)
+				proposed_answer = self._create_final_answer(previous_outputs, problem_object)
+				print(f"   Предполагаемый ответ: {proposed_answer.get('answer', 'N/A')}")
+
+				# 2. Вызываем верификатор
+				try:
+					verification_result = self.final_verifier.verify_answer(
+						problem_object, 
+						execution_trace, # Передаем трассировку последнего выполненного плана
+						proposed_answer
+					)
+					
+					# 3. Принимаем решение
+					if verification_result.get('decision') == 'accept':
+						print("   Верификатор ПОДТВЕРДИЛ сгенерированный ответ.")
+						final_answer = proposed_answer
+					else:
+						reason = verification_result.get('reason', 'Ответ отклонен без причины.')
+						print(f"   Верификатор ОТКЛОНИЛ сгенерированный ответ: {reason}")
+						final_answer = {
+							"answer": f"Задача не решена. Верификатор: {reason}",
+							"value": None,
+							"auto_generated": True,
+							"verification_failed": True
+						}
+				except Exception as e:
+					print(f"   Ошибка при вызове финального верификатора в fallback-режиме: {e}")
+					final_answer = self._create_final_answer(previous_outputs, problem_object) # Возвращаемся к старому поведению при ошибке
+			
+			elif previous_outputs:
+					# На всякий случай (если execution_trace пуст, но outputs есть - маловероятно)
+				print("   Нет трассировки, используется старый метод fallback...")
+				final_answer = self._create_final_answer(previous_outputs, problem_object)
+			else:
+				# Планы не выполнены, вывода нет
+				print("   Нет успешных выводов для создания ответа.")
+				final_answer = {
+					"answer": "Не удалось вычислить ответ. Ни один план не дал результата.",
+					"value": None,
+					"auto_generated": True
+				}
+		# === КОНЕЦ ИЗМЕНЕНИЯ ===
 		
 		# Шаг 4: Верификация
 		print("\n4. ВЕРИФИКАЦИЯ...")
