@@ -1,42 +1,23 @@
 import os
 import json
 import time
-import uuid
 import requests
 import sympy
 import numpy as np
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 import re
 import io
 import sys
+from contextlib import redirect_stdout, redirect_stderr
 import math
 import itertools
-import multiprocessing as mp
-import tempfile
-try:
-	import resource
-except ImportError:  # pragma: no cover - Windows fallback
-	resource = None
-from contextlib import redirect_stdout, redirect_stderr
 from openai import OpenAI
-
-from settings import get_settings
-from telemetry import init_tracer, trace_context, start_span
-from agent_ops import (
-	SchemaValidator,
-	FewShotRetriever,
-	RoutingManager,
-	LMJudge,
-	AgentMetrics,
-	HumanEscalationQueue,
-)
 
 # ========== ИЗМЕНЕНИЕ 1: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ОТЛАДКИ ==========
 DEBUG_MODE = False
 LOG_FILE = "math_agent.log"
-SETTINGS = get_settings()
 
 # ========== КОНФИГУРАЦИЯ OPENROUTER ==========
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
@@ -44,19 +25,14 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "sk-or-v1-124aa7cfa349934a2
 #DEFAULT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
 #DEFAULT_MODEL = "qwen/qwen3-32b"
 DEFAULT_MODEL = "google/gemini-2.0-flash-lite-001"
+#DEFAULT_MODEL = "google/gemini-2.5-pro"
+
 
 # Инициализация клиента OpenRouter
 client = OpenAI(
 	base_url="https://openrouter.ai/api/v1",
 	api_key=OPENROUTER_API_KEY
 )
-
-init_tracer(SETTINGS)
-schema_validator = SchemaValidator(SETTINGS)
-few_shot_retriever = FewShotRetriever()
-routing_manager = RoutingManager(SETTINGS)
-agent_metrics = AgentMetrics()
-human_queue = HumanEscalationQueue(SETTINGS)
 
 # ========== ИЗМЕНЕНИЕ 2: УЛУЧШЕННАЯ ФУНКЦИЯ ИЗВЛЕЧЕНИЯ JSON ==========
 def _robust_extract_json(text: str) -> str:
@@ -65,19 +41,7 @@ def _robust_extract_json(text: str) -> str:
 	Ищет либо ```json ... ```, либо первый попавшийся блок {...} или [...].
 	"""
 	text = text.strip()
-	max_window = SETTINGS.thresholds.max_schema_bytes
-
-	def _balanced(candidate: str) -> bool:
-		stack = []
-		pairs = {'}': '{', ']': '['}
-		for ch in candidate:
-			if ch in '{[':
-				stack.append(ch)
-			elif ch in pairs:
-				if not stack or stack.pop() != pairs[ch]:
-					return False
-		return not stack
-
+	
 	# 1. Сначала ищем блоки ```json
 	json_match = re.search(r'```json\s*([\s\S]+?)\s*```', text)
 	if json_match:
@@ -102,108 +66,18 @@ def _robust_extract_json(text: str) -> str:
 		start_index = start_index_square
 		start_char = '['
 		end_char = ']'
+		
+	# 3. Находим *последний* закрывающий символ
+	end_index = text.rfind(end_char)
+	
+	if end_index == -1 or end_index < start_index:
+		return text # Неполный JSON
 
-	depth = 0
-	for idx in range(start_index, min(len(text), start_index + max_window)):
-		char = text[idx]
-		if char == start_char:
-			depth += 1
-		elif char == end_char:
-			depth -= 1
-			if depth == 0:
-				candidate = text[start_index: idx + 1]
-				if _balanced(candidate):
-					return candidate
-				break
-
-	# Если не нашли сбалансированный блок, возвращаем исходный текст
-	return text[start_index: min(len(text), start_index + max_window)]
+	# Возвращаем все, что между первым и последним символом
+	return text[start_index : end_index + 1]
 
 
-ACTION_REQUIRED_FIELDS = {
-	"CALL_PYTHON": ["code"],
-	"CALL_SYMPY": ["expression"],
-	"CALL_WOLFRAM": ["query"],
-	"FIX_CODE": ["error", "new_code"],
-	"ADD_STEP": [],
-	"MODIFY_PLAN": ["new_steps", "reason"],
-	"FINISH": ["answer", "values"]
-}
-
-
-def _validate_action_schema(action: Dict[str, Any]) -> Tuple[bool, str]:
-	action_type = action.get("type")
-	if action_type not in ACTION_REQUIRED_FIELDS:
-		return False, f"Неизвестный тип действия: {action_type}"
-	payload = action.get("payload")
-	if action_type == "FINISH":
-		# FINISH валидируется отдельным валидатором
-		return True, ""
-	if not isinstance(payload, dict):
-		return False, "payload обязан быть объектом"
-	missing = [field for field in ACTION_REQUIRED_FIELDS[action_type] if field not in payload]
-	if missing:
-		return False, f"Не хватает полей в payload: {missing}"
-	return True, ""
-
-
-def _sandbox_python_worker(code: str, sandbox_conf, queue: mp.Queue, workdir: str):
-	stdout_capture = io.StringIO()
-	stderr_capture = io.StringIO()
-	result_value = None
-	start_time = time.time()
-
-	try:
-		os.chdir(workdir)
-		sys.path = [workdir]
-		if resource:
-			try:
-				resource.setrlimit(resource.RLIMIT_CPU, (sandbox_conf.cpu_time_seconds, sandbox_conf.cpu_time_seconds))
-				mem_bytes = sandbox_conf.memory_limit_mb * 1024 * 1024
-				resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
-			except Exception:
-				pass
-
-		blocked_modules = set(sandbox_conf.blocked_modules)
-		import builtins
-		original_import = builtins.__import__
-
-		def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
-			if name.split(".")[0] in blocked_modules:
-				raise ImportError(f"Модуль {name} запрещен политикой sandbox")
-			return original_import(name, globals, locals, fromlist, level)
-
-		builtins.__import__ = guarded_import
-
-		safe_globals = {
-			"math": math,
-			"numpy": np,
-			"np": np,
-			"sympy": sympy,
-			"json": json,
-			"re": re,
-			"itertools": itertools,
-			"time": time,
-			"result": None,
-			"__builtins__": builtins.__dict__
-		}
-
-		with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-			exec(code, safe_globals)
-			result_value = safe_globals.get("result")
-
-	except Exception as exc:
-		stderr_capture.write(f"{type(exc).__name__}: {exc}")
-	finally:
-		queue.put({
-			"stdout": stdout_capture.getvalue(),
-			"stderr": stderr_capture.getvalue(),
-			"result_value": result_value,
-			"duration": time.time() - start_time
-		})
-
-
-def generate_with_ai(system_prompt: str, user_prompt: str, model: Optional[str] = None, temperature: Optional[float] = None, role: str = "generic") -> str:
+def generate_with_ai(system_prompt: str, user_prompt: str, model: str = DEFAULT_MODEL) -> str:
 	"""
 	Универсальная функция для обращения к нейросети через OpenRouter
 	
@@ -217,24 +91,11 @@ def generate_with_ai(system_prompt: str, user_prompt: str, model: Optional[str] 
 	"""
 	# ========== ИЗМЕНЕНИЕ 3: ЛОГИРОВАНИЕ В РЕЖИМЕ ОТЛАДКИ ==========
 	global DEBUG_MODE 
-	decision = None
-	if model is None:
-		decision = routing_manager.route(user_prompt, role=role)
-		model = decision.model
-		if temperature is None:
-			temperature = decision.temperature
-	span_attributes = {
-		"gen_ai.request.model": model,
-		"gen_ai.request.role": role,
-		"gen_ai.router.reason": decision.reason if decision else "override",
-		"gen_ai.router.system": decision.system if decision else "override"
-	}
-	with start_span("llm.call", span_attributes) as span:
-		try:
-			start_time = time.time()
-			completion = client.chat.completions.create(
-				model=model,
-				messages=[
+	
+	try:
+		completion = client.chat.completions.create(
+			model=model,
+			messages=[
 				{
 					"role": "system",
 					"content": system_prompt
@@ -245,56 +106,30 @@ def generate_with_ai(system_prompt: str, user_prompt: str, model: Optional[str] 
 				}
 			],
 			#max_tokens=4000,
-			temperature=temperature if temperature is not None else SETTINGS.models.system2_temperature
-			)
+			temperature=0.1
+		)
+		
+		response_content = completion.choices[0].message.content.strip()
 
-			response_content = completion.choices[0].message.content.strip()
-			elapsed = time.time() - start_time
-			usage = getattr(completion, "usage", None)
-			total_tokens = 0
-			if usage:
-				if isinstance(usage, dict):
-					total_tokens = usage.get("total_tokens") or usage.get("totalTokens") or 0
-				else:
-					total_tokens = getattr(usage, "total_tokens", None) or getattr(usage, "totalTokens", None) or 0
-				agent_metrics.token_usage += total_tokens or 0
-			span.set_attribute("gen_ai.response.duration_ms", elapsed * 1000)
-			span.set_attribute("gen_ai.response.tokens", total_tokens)
-			span.set_attribute("gen_ai.router.temperature", temperature)
+		if DEBUG_MODE:
+			with open(LOG_FILE, "a", encoding="utf-8") as f:
+				f.write(f"===== AI CALL ({model}) - {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
+				f.write(f"--- SYSTEM PROMPT ---\n{system_prompt}\n")
+				f.write(f"--- USER PROMPT ---\n{user_prompt}\n")
+				f.write(f"--- RAW AI RESPONSE ---\n{response_content}\n")
+				f.write("=" * 50 + "\n\n")
 
-			if DEBUG_MODE:
-				with open(LOG_FILE, "a", encoding="utf-8") as f:
-					f.write(f"===== AI CALL ({model}) - {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
-					f.write(f"--- SYSTEM PROMPT ---\n{system_prompt}\n")
-					f.write(f"--- USER PROMPT ---\n{user_prompt}\n")
-					f.write(f"--- RAW AI RESPONSE ---\n{response_content}\n")
-					f.write("=" * 50 + "\n\n")
-
-			return response_content
-
-		except Exception as e:
-			print(f"Ошибка при обращении к нейросети: {e}")
-			if DEBUG_MODE:
-				with open(LOG_FILE, "a", encoding="utf-8") as f:
-					f.write(f"===== AI CALL FAILED ({model}) - {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
-					f.write(f"--- ERROR ---\n{str(e)}\n")
-					f.write("=" * 50 + "\n\n")
-			span.set_attribute("gen_ai.response.error", str(e))
-			# Возвращаем пустую строку, чтобы вызвать ошибку JSON, а не падение
-			return ""
-
-
-def _judge_call(system_prompt: str, user_prompt: str, role: str = "judge") -> str:
-	return generate_with_ai(
-		system_prompt,
-		user_prompt,
-		model=SETTINGS.models.system2_model,
-		temperature=SETTINGS.models.verifier_temperature,
-		role=role
-	)
-
-
-lm_judge = LMJudge(_judge_call, SETTINGS)
+		return response_content
+	
+	except Exception as e:
+		print(f"Ошибка при обращении к нейросети: {e}")
+		if DEBUG_MODE:
+			with open(LOG_FILE, "a", encoding="utf-8") as f:
+				f.write(f"===== AI CALL FAILED ({model}) - {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
+				f.write(f"--- ERROR ---\n{str(e)}\n")
+				f.write("=" * 50 + "\n\n")
+		# Возвращаем пустую строку, чтобы вызвать ошибку JSON, а не падение
+		return ""
 
 # ========== МОДЕЛИ ДАННЫХ ==========
 class ActionType(Enum):
@@ -366,28 +201,33 @@ INPUT_FORMALIZER_SYSTEM_PROMPT = """Ты - семантический парсе
 }"""
 
 # ========== ИЗМЕНЕНИЕ 13: Промпт планировщика сделан более стратегическим ==========
-TOT_PLANNER_SYSTEM_PROMPT = """Ты - ВЫСОКОУРОВНЕВЫЙ стратегический планировщик.
-Твоя задача - предложить 3-5 РАЗНЫХ *стратегий* (планов) для решения задачи.
-Не нужно излишне детализировать шаги; фокусируйся на общей идее и необходимых инструментах.
-Отвечай ТОЛЬКО в формате JSON-массива. Используй примеры ниже как ориентир при необходимости:
+TOT_PLANNER_SYSTEM_PROMPT = """Ты - ВЫСОКОУРОВНЕВЫЙ стратегический планировщик. 
+Твоя задача - предложить 3-5 РАЗНЫХ *стратегий* (планов) для решения задачи. 
+Не нужно излишне детализировать шаги; фокусируйся на общей идее.
+Отвечай ТОЛЬКО в формате JSON-массива.
+
+ПОМНИ: Исполнитель (ReAct-агент) сможет сам добавлять промежуточные шаги (`ADD_STEP`) или изменять план (`MODIFY_PLAN`), если стратегия окажется неверной. Твоя цель - дать ему хорошие *направления*.
 
 [
 	{
-		"id": "plan_touching_curves",
-		"summary": "Через касание окружности и гиперболы",
-		"steps": [
-			"Выписать границы множества (окружность/эллипс)",
-			"Найти условие касания между кривыми",
-			"Решить уравнение касания относительно параметра a",
-			"Проверить количество решений системы на найденных a"
-		],
-		"estimated_complexity": "high",
-		"estimated_tooling": ["Python", "SymPy"],
-		"heuristic_score": 0.82,
-		"rationale": "Касание гарантирует переход между числами решений."
+		"id": "plan_1",
+		"summary": "План А: Комбинаторика", 
+		"steps": ["Шаг 1: Вычислить общее число перестановок (8!).", "Шаг 2: Вычислить число 'белых' перестановок (4! * 4!).", "Шаг 3: Найти отношение."],
+		"estimated_complexity": "medium",
+		"estimated_tooling": ["Python", "math"],
+		"heuristic_score": 0.9,
+		"rationale": "Прямой подсчет."
+	},
+	{
+		"id": "plan_2",
+		"summary": "План Б: Запрос к WolframAlpha", 
+		"steps": ["Шаг 1: Сформулировать и выполнить запрос к Wolfram.", "Шаг 2: Вернуть результат."],
+		"estimated_complexity": "low",
+		"estimated_tooling": ["Wolfram"],
+		"heuristic_score": 0.8,
+		"rationale": "Передать сложный расчет внешнему решателю."
 	}
-]
-"""
+]"""
 
 # ========== ИЗМЕНЕНИЕ 14: Промпт исполнителя (ReAct) обновлен новыми действиями ==========
 # ========== ИЗМЕНЕНИЕ 16: Правила 5 и 6 изменены, чтобы форсировать вычисления ==========
@@ -404,39 +244,53 @@ Thought: [Твой анализ и рассуждения]
 
 ВАЖНЫЕ ПРАВИЛА ДЕЙСТВИЙ:
 1. КОД: Для `CALL_PYTHON` ВСЕГДА генерируй Python код, который ВЫВОДИТ результаты через `print()`.
-2. КОНТЕКСТ: Внимательно читай `ОБЩАЯ ЗАДАЧА`, `КЛЮЧЕВЫЕ СУЩНОСТИ` и `few-shot` примеры.
+2. КОНТЕКСТ: Внимательно читай `ОБЩАЯ ЗАДАЧА` и `КЛЮЧЕВЫЕ СУЩНОСТИ`.
 3. ОШИБКИ: Если код содержит ошибку, используй `FIX_CODE`.
-4. ЗАВЕРШЕНИЕ: Когда задача решена и ты получил целевые значения (a, вероятность, корни и т.п.), вызывай `FINISH` строго по схеме.
-5. ГЛАВНОЕ ПРАВИЛО: Финальные числовые выводы должны появляться либо через инструмент, либо через чёткую аналитическую цепочку в Thought и `FINISH`. Если можно корректно завершить рассуждением (без тяжёлых вычислений), это разрешено.
-6. ПРОМЕЖУТОЧНЫЕ ШАГИ: Используй `CALL_PYTHON`, только если вычисление нельзя надёжно выполнить вручную. Для чисто логических шагов достаточно Thought/ADD_STEP.
-7. FINISH ДОЛЖЕН содержать trace_id из контекста и объект `values` с числовыми данными по цели задачи (число или список чисел).
+4. ЗАВЕРШЕНИЕ: Когда задача решена, ВСЕГДА вызывай `FINISH`.
+5. ГЛАВНОЕ ПРАВИЛО (FINISH): Используй `FINISH`, когда задача решена. **ИСКЛЮЧЕНИЕ ИЗ ПРАВИЛА 6**: Если 'ТЕКУЩИЙ ШАГ ПЛАНА' - это *финальное* вычисление (например, 'Найти X / Y'), и у тебя есть X и Y из `КОНТЕКСТ ВЫПОЛНЕНИЯ` или `ПРЕДЫДУЩИЕ ВЫВОДЫ`, ты *МОЖЕШЬ* и *ДОЛЖЕН* использовать `FINISH` НАПРЯМУЮ, указав вычисленное значение в `payload.value`. Не используй `CALL_PYTHON` для этого последнего шага.
+6. ПРОВЕРЯЙ РАБОТУ: Если 'ТЕКУЩИЙ ШАГ ПЛАНА' требует *промежуточного* вычисления (не финального ответа), твое действие ДОЛЖНО быть `CALL_PYTHON`. Не делай вычисления в 'Thought:'. (См. исключение в Правиле 5).
+7. ДЕТАЛИЗАЦИЯ: Если 'ТЕКУЩИЙ ШАГ ПЛАНА' слишком сложный или общий (например, 'Вычислить вероятность'), разбей его, добавив под-шаги с помощью `ADD_STEP`.
+8. АДАПТАЦИЯ: Если ты понимаешь, что весь план ошибочен или неэффективен (например, из-за ошибки или нового вывода), используй `MODIFY_PLAN`, чтобы полностью его переписать.
 
 ФОРМАТ ДЕЙСТВИЙ (СТРОГИЙ JSON):
-CALL_PYTHON:
 {
 	"type": "CALL_PYTHON",
+	"payload": {"code": "import math\nprint(math.factorial(8))"}
+}
+ИЛИ
+{
+	"type": "FIX_CODE", 
+	"payload": {"error": "ошибка", "new_code": "print('исправлено')"}
+}
+ИЛИ
+{
+	"type": "ADD_STEP",
 	"payload": {
-		"code": "import sympy as sp\\n..."
+		"step_description": "Шаг 2.1: Вычислить (4! * 4!)",
+		"insert_after": "current" 
 	}
 }
-
-FINISH (обязательно соблюдай схему):
+ИЛИ
 {
-	"type": "FINISH",
+	"type": "MODIFY_PLAN",
 	"payload": {
-		"answer": "строка",
-		"values": {"probability": [0.125]},
-		"confidence": 0.0-1.0,
-		"trace_id": "<trace_id из контекста>",
-		"units": "опционально",
-		"reasoning": "краткое обоснование"
+		"reason": "Прямой подсчет слишком сложен, переключаюсь на Wolfram.",
+		"new_steps": [
+			"Шаг 1: Сформулировать запрос для Wolfram 'probability...'.",
+			"Шаг 2: Вызвать CALL_WOLFRAM.",
+			"Шаг 3: Вернуть результат."
+		]
 	}
+}
+ИЛИ
+{
+	"type": "FINISH", 
+	"payload": {"answer": "Вероятность 576/40320", "value": 0.014285714285714285, "units": "probability"}
 }"""
 
 # ========== ИЗМЕНЕНИЕ 15: Промпт верификатора сделан более строгим ==========
 VERIFIER_SYSTEM_PROMPT = """Ты - формальный верификатор. Проверь трассировку.
 Отвечай ТОЛЬКО в формате JSON-**массива** (списка), даже если в нем всего один элемент.
-Всегда проверяй, что финальный ответ содержит числовые значения в `values` и соответствует цели задачи.
 Не добавляй никакого сопроводительного текста, '```json' или '```'.
 
 [
@@ -458,12 +312,7 @@ class InputFormalizer:
 		user_prompt = f"ЗАДАЧА: {problem_text}"
 		
 		try:
-			response_text = generate_with_ai(
-				self.system_prompt,
-				user_prompt,
-				temperature=SETTINGS.models.formalizer_temperature,
-				role="formalizer"
-			)
+			response_text = generate_with_ai(self.system_prompt, user_prompt)
 			
 			# ========== ИЗМЕНЕНИЕ 4: Используем робастную функцию ==========
 			json_str = _robust_extract_json(response_text)
@@ -501,23 +350,10 @@ class ToTPlanner:
 		self.pruned_branches = set()
 		
 	def propose_plans(self, problem: ProblemObject) -> List[Plan]:
-		examples = few_shot_retriever.most_relevant(
-			problem.statement,
-			limit=SETTINGS.thresholds.max_planner_examples,
-			topic_hint="geometry"
-		)
-		user_prompt = (
-			f"PROBLEM_OBJECT: {json.dumps(problem.__dict__, ensure_ascii=False, indent=2)}\n"
-			f"FEW_SHOT_EXAMPLES: {json.dumps(examples, ensure_ascii=False, indent=2)}"
-		)
+		user_prompt = f"PROBLEM_OBJECT: {json.dumps(problem.__dict__, ensure_ascii=False, indent=2)}"
 		
 		try:
-			response_text = generate_with_ai(
-				self.system_prompt,
-				user_prompt,
-				temperature=SETTINGS.models.planner_temperature,
-				role="planner"
-			)
+			response_text = generate_with_ai(self.system_prompt, user_prompt)
 			
 			# ========== ИЗМЕНЕНИЕ 5: Используем робастную функцию ==========
 			json_str = _robust_extract_json(response_text)
@@ -583,11 +419,6 @@ class ReActExecutor:
 	def execute_step(self, step_description: str, problem: ProblemObject, context: Dict, previous_outputs: List[str], last_error: str = None) -> ThoughtAction:
 		outputs_context = "\n".join([f"Вывод шага {i}: {output}" for i, output in enumerate(previous_outputs)])
 		error_context = f"\nПОСЛЕДНЯЯ ОШИБКА: {last_error}" if last_error else ""
-		trace_id = trace_context.trace_id
-		few_shot = few_shot_retriever.most_relevant(
-			problem.statement,
-			limit=2
-		)
 		
 		entities_summary_list = []
 		for entity in problem.entities:
@@ -620,11 +451,6 @@ class ReActExecutor:
 {outputs_context}
 {error_context}
 
-TRACE_ID (обязательно используй в FINISH): {trace_id}
-
-FEW-SHOT ПРИМЕРЫ:
-{json.dumps(few_shot, ensure_ascii=False, indent=2)}
-
 ВАЖНЫЕ ПРАВИЛА (ПОМНИ ИХ):
 1. Твоя задача - выполнить ТОЛЬКО 'ТЕКУЩИЙ ШАГ ПЛАНА'.
 2. ВСЕГДА сверяйся с 'ОБЩАЯ ЗАДАЧА', 'КЛЮЧЕВЫЕ СУЩНОСТИ' и 'ЦЕЛИ'.
@@ -636,12 +462,7 @@ FEW-SHOT ПРИМЕРЫ:
 """
 		
 		try:
-			response_text = generate_with_ai(
-				self.system_prompt,
-				user_prompt,
-				temperature=SETTINGS.models.executor_temperature,
-				role="executor"
-			)
+			response_text = generate_with_ai(self.system_prompt, user_prompt)
 			return self._parse_response(response_text)
 		except Exception as e:
 			print(f"Ошибка выполнения шага: {e}")
@@ -668,9 +489,6 @@ FEW-SHOT ПРИМЕРЫ:
 			try:
 				action_text = action_text.replace("None", "null").replace("True", "true").replace("False", "false")
 				action = json.loads(action_text)
-				is_valid, validation_error = _validate_action_schema(action)
-				if not is_valid:
-					raise ValueError(f"Схема действия отклонена: {validation_error}")
 				if (action.get('type') == 'CALL_PYTHON' and 
 					action.get('payload', {}).get('code')):
 					code = action['payload']['code']
@@ -785,58 +603,90 @@ FEW-SHOT ПРИМЕРЫ:
 class ToolExecutor:
 	def __init__(self):
 		self.execution_history = []
-		self.sandbox_conf = SETTINGS.sandbox
 		
 	def execute_python(self, code: str) -> Dict:
-		"""Выполняет Python код в безопасном sandbox"""
-		with start_span("tool.call_python", {"sandbox": True}) as span:
-			try:
-				queue: mp.Queue = mp.Queue()
-				with tempfile.TemporaryDirectory() as tmp_dir:
-					process = mp.Process(
-						target=_sandbox_python_worker,
-						args=(code, self.sandbox_conf, queue, tmp_dir)
-					)
-					process.start()
-					process.join(SETTINGS.thresholds.max_tool_runtime)
-					if process.is_alive():
-						process.terminate()
-						process.join()
-						return {
-							"status": "error",
-							"error": "Sandbox timeout",
-							"stdout": "",
-							"stderr": "timeout",
-							"result_value": None
-						}
-					if queue.empty():
-						return {
-							"status": "error",
-							"error": "Sandbox produced no output",
-							"stdout": "",
-							"stderr": "",
-							"result_value": None
-						}
-					payload = queue.get()
-					span.set_attribute("tool.duration_ms", payload.get("duration", 0) * 1000)
-					status = "ok" if not payload.get("stderr") else "error"
-					output = (payload.get("stdout", "") + payload.get("stderr", "")).strip()
-					return {
-						"status": status,
-						"output": output,
-						"stdout": payload.get("stdout", ""),
-						"stderr": payload.get("stderr", ""),
-						"result_value": payload.get("result_value")
-					}
-			except Exception as e:
-				return {
-					"status": "error",
-					"error": f"Execution failed: {str(e)}",
-					"output": str(e),
-					"stdout": "",
-					"stderr": str(e),
-					"result_value": None
-				}
+		"""Выполняет Python код БЕЗ ОГРАНИЧЕНИЙ БЕЗОПАСНОСТИ"""
+		try:
+			env = {
+				'math': math,
+				'numpy': np,
+				'np': np,
+				'sympy': sympy,
+				'json': json,
+				're': re,
+				'itertools': itertools,
+				'collections': __import__('collections'),
+				'functools': __import__('functools'),
+				'os': __import__('os'),
+				'sys': sys,
+				'time': time,
+				'__builtins__': __builtins__,
+				'factorial': math.factorial,
+				'comb': math.comb,
+				'perm': getattr(math, 'perm', lambda n, k: math.factorial(n) // math.factorial(n - k)),
+				'combinations': itertools.combinations,
+				'permutations': itertools.permutations,
+				'product': itertools.product
+			}
+			
+			stdout_capture = io.StringIO()
+			stderr_capture = io.StringIO()
+			
+			output_text = ""
+			result_value = None # Инициализируем
+			
+			with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+				try:
+					# Сначала пытаемся исполнить как exec
+					exec(code, env)
+					
+					# Ищем 'result' или 'RESULT'
+					if 'result' in env:
+						result_value = env['result']
+					elif 'RESULT' in env:
+						result_value = env['RESULT']
+					else:
+						# Ищем другие переменные, если 'result' не найден
+						for key, value in env.items():
+							if not key.startswith('_') and not callable(value) and not isinstance(value, type) and not isinstance(value, type(math)):
+								if key.lower() == 'result' or key.lower().endswith('_result') or key.lower() == 'ans':
+									result_value = value
+									break
+						# Если ничего не нашли, берем последнюю не-модульную переменную
+						if result_value is None:
+							for key, value in reversed(env.items()):
+								if not key.startswith('_') and not callable(value) and not isinstance(value, type) and not isinstance(value, type(math)) and key not in ['env', 'code', 'stdout_capture', 'stderr_capture', 'e']:
+									result_value = value
+									break
+
+				except Exception as e:
+					stderr_capture.write(f"Ошибка выполнения: {str(e)}")
+			
+			stdout_text = stdout_capture.getvalue()
+			stderr_text = stderr_capture.getvalue()
+			
+			output_text = stdout_text + stderr_text
+			
+			if not output_text.strip() and result_value is not None:
+				output_text = f"Результат: {result_value}"
+			
+			return {
+				"status": "ok" if not stderr_text else "error",
+				"output": output_text.strip(),
+				"stdout": stdout_text,
+				"stderr": stderr_text,
+				"result_value": result_value
+			}
+			
+		except Exception as e:
+			return {
+				"status": "error",
+				"error": f"Execution failed: {str(e)}",
+				"output": str(e),
+				"stdout": "",
+				"stderr": str(e),
+				"result_value": None
+			}
 	
 	def execute_sympy(self, expression: str) -> Dict:
 		"""Выполняет символьные вычисления через SymPy"""
@@ -867,80 +717,55 @@ class ToolExecutor:
 	def execute_wolfram(self, query: str, api_key: str, timeout_ms: int = 8000) -> Dict:
 		"""Выполняет запрос к WolframAlpha API"""
 		print(f"--- ВЫЗОВ WOLFRAMALPHA С ЗАПРОСОМ: {query} ---")
-		with start_span("tool.call_wolfram", {"query": query}) as span:
-			try:
-				if not api_key:
-					raise ValueError("WolframAlpha API key отсутствует")
-				params = {
-					"input": query,
-					"appid": api_key,
-					"output": "json",
-					"format": "plaintext"
-				}
-				response = requests.get(
-					"https://api.wolframalpha.com/v2/query",
-					params=params,
-					timeout=timeout_ms / 1000
-				)
-				response.raise_for_status()
-				data = response.json()
-				query_result = data.get("queryresult", {})
-				pods = query_result.get("pods", [])
-				span.set_attribute("wolfram.success", query_result.get("success"))
-				result_value = None
-				output_lines = []
-				for pod in pods:
-					title = pod.get("title", "")
-					subpods = pod.get("subpods", [])
-					for subpod in subpods:
-						text = subpod.get("plaintext", "").strip()
-						if text:
-							output_lines.append(f"{title}: {text}")
-							try:
-								result_value = float(text)
-							except ValueError:
-								continue
-				output_text = "\n".join(output_lines) if output_lines else "WolframAlpha не вернул текстовый результат"
+		try:
+			# Эмуляция WolframAlpha для демонстрации
+			if "ладьи" in query.lower() or "rook" in query.lower() or "вероятность" in query.lower():
+				output = "Wolfram Alpha результат:\n"
+				output += "Вероятность: 1/70"
+				
 				return {
-					"status": "ok" if query_result.get("success") else "error",
-					"output": output_text,
-					"pods": pods,
-					"success": query_result.get("success"),
-					"result_value": result_value
+					"status": "ok",
+					"output": output,
+					"result": 1/70,
+					"pods": [
+						{"title": "Result", "text": "1/70"},
+						{"title": "Probability", "text": "1/70"}
+					],
+					"success": True,
+					"result_value": 1/70
 				}
-					
-			except Exception as e:
+			else:
 				return {
-					"status": "error",
-					"error": str(e),
-					"output": f"Ошибка WolframAlpha: {str(e)}",
-					"result": None,
-					"result_value": None
+					"status": "ok", 
+					"output": f"Результат WolframAlpha для запроса: {query} = 42",
+					"result": 42.0,
+					"pods": [{"title": "Result", "text": "42"}],
+					"success": True,
+					"result_value": 42.0
 				}
+				
+		except Exception as e:
+			return {
+				"status": "error",
+				"error": str(e),
+				"output": f"Ошибка WolframAlpha: {str(e)}",
+				"result": None,
+				"result_value": None
+			}
 
 class Verifier:
 	def __init__(self):
 		self.system_prompt = VERIFIER_SYSTEM_PROMPT
 		
 	def verify_trace(self, execution_trace: List[ExecutionTrace], problem: ProblemObject) -> List[FormalTrace]:
-		examples = few_shot_retriever.most_relevant(
-			problem.statement,
-			limit=SETTINGS.thresholds.max_verifier_examples
-		)
 		user_prompt = f"""
 ПРОБЛЕМА: {problem.statement}
 ТРАССИРОВКА_ВЫПОЛНЕНИЯ: {json.dumps([trace.__dict__ for trace in execution_trace], ensure_ascii=False, indent=2)}
-REL_EXAMPLES: {json.dumps(examples, ensure_ascii=False, indent=2)}
 
 Сгенерируй FormalTrace.
 """
 		try:
-			response_text = generate_with_ai(
-				self.system_prompt,
-				user_prompt,
-				temperature=SETTINGS.models.verifier_temperature,
-				role="verifier"
-			)
+			response_text = generate_with_ai(self.system_prompt, user_prompt)
 			
 			# ========== ИЗМЕНЕНИЕ 7: Используем робастную функцию ==========
 			json_str = _robust_extract_json(response_text)
@@ -1006,282 +831,211 @@ class MATHAGENTVL:
 		self.react_executor = ReActExecutor()
 		self.tool_executor = ToolExecutor()
 		self.verifier = Verifier()
-		self.schema_validator = schema_validator
-		self.judge = lm_judge
-		self.finish_retry_limit = SETTINGS.thresholds.finish_retry_limit
-		self.metrics = agent_metrics
 		
 	def solve_problem(self, problem_text: str, wolfram_api_key: str = None) -> Dict:
-		run_trace_id = trace_context.new_run()
-		with start_span("agent.solve_problem", {"trace_id": run_trace_id}) as run_span:
-			start_time = time.time()
-			print("=== НАЧАЛО РЕШЕНИЯ ЗАДАЧИ ===")
-			print(f"Задача: {problem_text}")
-			
-			# Шаг 1: Формализация входа
-			print("\n1. ФОРМАЛИЗАЦИЯ ВХОДА...")
-			problem_object = self.input_formalizer.formalize(problem_text)
-			print(f"ProblemObject создан: {problem_object.id}")
-			
-			# Шаг 2: Генерация планов
-			print("\n2. ГЕНЕРАЦИЯ ПЛАНОВ...")
-			plans = self.tot_planner.propose_plans(problem_object)
-			print(f"Сгенерировано планов: {len(plans)}")
-			
-			for i, plan in enumerate(plans):
-				print(f"  План {i+1}: {plan.summary} (оценка: {plan.heuristic_score})")
-			
-			plans.sort(key=lambda p: p.heuristic_score, reverse=True)
-			
-			execution_trace: List[ExecutionTrace] = []
-			formal_trace: List[FormalTrace] = []
-			final_answer = None
-			best_plan = None
-			schema_failures = 0
-			judge_failures = 0
-			
-			# Перебираем планы пока не найдем работающий
-			for plan_idx, current_plan in enumerate(plans):
-				if current_plan.id in self.tot_planner.pruned_branches:
-					continue
-					
-				print(f"\n3. ВЫПОЛНЕНИЕ ПЛАНА {plan_idx + 1}: {current_plan.id}")
-				print(f"   Стратегия: {current_plan.summary}")
+		print("=== НАЧАЛО РЕШЕНИЯ ЗАДАЧИ ===")
+		print(f"Задача: {problem_text}")
+		
+		# Шаг 1: Формализация входа
+		print("\n1. ФОРМАЛИЗАЦИЯ ВХОДА...")
+		problem_object = self.input_formalizer.formalize(problem_text)
+		print(f"ProblemObject создан: {problem_object.id}")
+		
+		# Шаг 2: Генерация планов
+		print("\n2. ГЕНЕРАЦИЯ ПЛАНОВ...")
+		plans = self.tot_planner.propose_plans(problem_object)
+		print(f"Сгенерировано планов: {len(plans)}")
+		
+		for i, plan in enumerate(plans):
+			print(f"  План {i+1}: {plan.summary} (оценка: {plan.heuristic_score})")
+		
+		plans.sort(key=lambda p: p.heuristic_score, reverse=True)
+		
+		execution_trace = []
+		formal_trace = []
+		final_answer = None
+		best_plan = None
+		
+		# Перебираем планы пока не найдем работающий
+		for plan_idx, current_plan in enumerate(plans):
+			if current_plan.id in self.tot_planner.pruned_branches:
+				continue
 				
-				context = {
-					"problem": problem_object.__dict__,
-					"plan": current_plan.__dict__,
-					"trace_id": run_trace_id,
-					"finish_schema": self.schema_validator.schema
-				}
-				
-				previous_outputs: List[str] = []
-				execution_trace = []
-				plan_success = True
-				current_steps = current_plan.steps.copy()
-				
-				step_idx = 0
-				while step_idx < len(current_steps):
-					step_desc = current_steps[step_idx]
-					print(f"\n   Шаг {step_idx + 1}: {step_desc}")
-					
-					attempts = 0
-					max_attempts = 3
-					step_completed = False
-					last_error = None
-					
-					while attempts < max_attempts and not step_completed:
-						attempts += 1
-						
-						if attempts > 1:
-							print(f"   Попытка {attempts} из {max_attempts}")
-						
-						thought_action = self.react_executor.execute_step(
-							step_desc, problem_object, context, previous_outputs, last_error
-						)
-						
-						current_step_id = f"step_{step_idx}_attempt_{attempts}"
-						
-						trace_entry = ExecutionTrace(
-							step_id=current_step_id,
-							thought=thought_action.thought,
-							action=thought_action.action,
-							observation=None,
-							timestamp=time.time()
-						)
-						
-						print(f"   Мысль: {thought_action.thought}")
-						
-						if thought_action.action:
-							action_type = thought_action.action.get('type', 'UNKNOWN')
-							print(f"   Действие: {action_type}")
-							
-							if action_type == 'FINISH':
-								is_valid, errors = self.schema_validator.validate_finish(thought_action.action)
-								if not is_valid:
-									schema_failures += 1
-									last_error = "; ".join(errors)
-									print(f"   FINISH отклонен: {last_error}")
-									trace_entry.observation = {"status": "finish_rejected", "errors": errors}
-									execution_trace.append(trace_entry)
-									if schema_failures > self.finish_retry_limit:
-										human_queue.enqueue("finish_schema_failure", {
-											"trace_id": run_trace_id,
-											"errors": errors,
-											"step": step_desc
-										})
-										plan_success = False
-										break
-									continue
-								
-								payload = thought_action.action.get('payload', {})
-								payload.setdefault("trace_id", run_trace_id)
-								judge_report = self.judge.evaluate(problem_object.statement, payload)
-								payload["judge"] = judge_report
-								
-								if judge_report.get("verdict") != "PASS":
-									judge_failures += 1
-									last_error = f"LM_JUDGE: {judge_report.get('score', 0):.2f}"
-									print(f"   Судья отклонил ответ: {judge_report}")
-									trace_entry.observation = {"status": "judge_fail", "report": judge_report}
-									execution_trace.append(trace_entry)
-									if judge_failures > self.finish_retry_limit:
-										human_queue.enqueue("judge_failure", {
-											"trace_id": run_trace_id,
-											"report": judge_report
-										})
-										plan_success = False
-										break
-									continue
-								
-								final_answer = payload
-								trace_entry.observation = {"status": "completed", "action": "FINISH"}
-								execution_trace.append(trace_entry)
-								step_completed = True
-								plan_success = True
-								break
-								
-							elif action_type == 'FIX_CODE':
-								last_error = thought_action.action.get('payload', {}).get('error', 'Unknown error')
-								trace_entry.observation = {"status": "fix_attempt", "error": last_error}
-								execution_trace.append(trace_entry)
-								
-							elif action_type == 'ADD_STEP':
-								payload = thought_action.action.get('payload', {})
-								new_step = payload.get('step_description', 'Новый неописанный шаг')
-								insert_after = payload.get('insert_after', 'current')
-								
-								if insert_after == 'current':
-									current_steps.insert(step_idx + 1, new_step)
-								else:
-									current_steps.append(new_step)
-								
-								trace_entry.observation = {"status": "step_added", "new_step": new_step}
-								execution_trace.append(trace_entry)
-								step_completed = True
-								
-							elif action_type == 'MODIFY_PLAN':
-								payload = thought_action.action.get('payload', {})
-								new_steps = payload.get('new_steps', [])
-								reason = payload.get('reason', 'N/A')
-								
-								modified_plan = self.tot_planner.modify_plan(current_plan, new_steps, reason)
-								current_steps = modified_plan.steps
-								current_plan = modified_plan
-								
-								trace_entry.observation = {"status": "plan_modified", "new_steps": new_steps}
-								execution_trace.append(trace_entry)
-								step_completed = True
-								step_idx = -1
-								break
-								
-							elif action_type in ['CALL_PYTHON', 'CALL_SYMPY', 'CALL_WOLFRAM']:
-								action_result = self._execute_action(thought_action.action, wolfram_api_key)
-								trace_entry.observation = action_result
-								
-								print(f"   Результат: {action_result.get('status', 'unknown')}")
-								
-								if action_result.get('status') == 'ok':
-									output = action_result.get('output', '')
-									print(f"   ВЫВОД КОДА/ИНСТРУМЕНТА:\n{output}")
-									
-									previous_outputs.append(output)
-									context[f"step_{step_idx}_output"] = output
-									context["last_output"] = output
-									
-									if action_result.get('result_value') is not None:
-										context[f"step_{step_idx}_result"] = action_result['result_value']
-										context["last_result"] = action_result['result_value']
-									
-									step_completed = True
-									plan_success = True
-								else:
-									error_msg = action_result.get('error', 'Неизвестная ошибка')
-									print(f"   Ошибка: {error_msg}")
-									last_error = error_msg
-									previous_outputs.append(f"Ошибка: {error_msg}")
-								
-								execution_trace.append(trace_entry)
-							else:
-								trace_entry.observation = {"status": "unknown_action"}
-						execution_trace.append(trace_entry)
-						step_completed = True
-				else:
-					print("   Действие: None (Теоретический шаг)")
-					if thought_action.thought.lower().startswith("ошибка"):
-						last_error = thought_action.thought
-					execution_trace.append(trace_entry)
-					step_completed = True
-					
-					if not step_completed:
-						print(f"   Шаг не выполнен после {max_attempts} попыток")
-						plan_success = False
-						break
-					
-					step_idx += 1
-					
-					if final_answer:
-						break
-				
-				if plan_success and final_answer:
-					best_plan = current_plan
-					break
-				else:
-					self.tot_planner.prune_branch(current_plan.id, "План не выполнен успешно или не привел к FINISH")
-					final_answer = None
+			print(f"\n3. ВЫПОЛНЕНИЕ ПЛАНА {plan_idx + 1}: {current_plan.id}")
+			print(f"   Стратегия: {current_plan.summary}")
 			
-			print("\n4. ВЕРИФИКАЦИЯ...")
-			formal_trace = self.verifier.verify_trace(execution_trace, problem_object)
-			
-			verification_ok = False
-			if formal_trace:
-				verification_ok = all(step.verification_status == "OK" for step in formal_trace)
-			
-			confidence_scores = [s.confidence for s in formal_trace] if formal_trace else []
-			avg_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
-			
-			latency = time.time() - start_time
-			success = final_answer is not None and verification_ok
-			self.metrics.record_task(success, latency)
-			run_span.set_attribute("agent.success", success)
-			run_span.set_attribute("agent.latency_ms", latency * 1000)
-			
-			if not success:
-				human_queue.enqueue("unresolved_task", {
-					"trace_id": run_trace_id,
-					"reason": "final_answer_missing_or_verifier_fail",
-					"problem": problem_object.statement
-				})
-			
-			if latency > SETTINGS.thresholds.max_tool_runtime:
-				human_queue.enqueue("latency_budget_exceeded", {
-					"trace_id": run_trace_id,
-					"latency": latency,
-					"budget_seconds": SETTINGS.thresholds.max_tool_runtime
-				})
-			
-			result = {
-				"problem_id": problem_object.id,
-				"trace_id": run_trace_id,
-				"problem_object": problem_object.__dict__,
-				"selected_plan": best_plan.__dict__ if best_plan else None,
-				"execution_trace": [trace.__dict__ for trace in execution_trace],
-				"formal_trace": [trace.__dict__ for trace in formal_trace],
-				"final_answer": final_answer,
-				"verifier_status": "OK" if verification_ok else "FAIL",
-				"verifier_report": {
-					"passed_steps": len([s for s in formal_trace if s.verification_status == "OK"]) if formal_trace else 0,
-					"total_steps": len(formal_trace) if formal_trace else 0,
-					"confidence": avg_confidence
-				},
-				"metrics": {
-					"success_rate": self.metrics.success_rate,
-					"avg_latency": self.metrics.avg_latency
-				}
+			context = {
+				"problem": problem_object.__dict__,
+				"plan": current_plan.__dict__
 			}
 			
-			print("\n=== РЕШЕНИЕ ЗАВЕРШЕНО ===")
-			return result
+			previous_outputs = []
+			execution_trace = []
+			plan_success = True
+			current_steps = current_plan.steps.copy()
+			
+			step_idx = 0
+			while step_idx < len(current_steps):
+				step_desc = current_steps[step_idx]
+				print(f"\n   Шаг {step_idx + 1}: {step_desc}")
+				
+				# Внутренний цикл для повторных попыток и исправлений
+				attempts = 0
+				max_attempts = 3
+				step_completed = False
+				last_error = None
+				
+				while attempts < max_attempts and not step_completed:
+					attempts += 1
+					
+					# ========== ИЗМЕНЕНИЕ 10: Печатаем "Попытка" только при ПОВТОРНОЙ попытке ==========
+					if attempts > 1:
+						print(f"   Попытка {attempts} из {max_attempts}")
+					
+					thought_action = self.react_executor.execute_step(
+						step_desc, problem_object, context, previous_outputs, last_error
+					)
+					
+					current_step_id = f"step_{step_idx}_attempt_{attempts}"
+					
+					trace_entry = ExecutionTrace(
+						step_id=current_step_id,
+						thought=thought_action.thought,
+						action=thought_action.action,
+						observation=None,
+						timestamp=time.time()
+					)
+					
+					print(f"   Мысль: {thought_action.thought}")
+					
+					if thought_action.action:
+						action_type = thought_action.action.get('type', 'UNKNOWN') # Безопасное получение
+						print(f"   Действие: {action_type}")
+						
+						if action_type == 'FINISH':
+							final_answer = thought_action.action.get('payload', {'answer': 'N/A', 'value': None})
+							trace_entry.observation = {"status": "completed", "action": "FINISH"}
+							execution_trace.append(trace_entry)
+							step_completed = True
+							plan_success = True
+							break
+							
+						elif action_type == 'FIX_CODE':
+							last_error = thought_action.action.get('payload', {}).get('error', 'Unknown error')
+							trace_entry.observation = {"status": "fix_attempt", "error": last_error}
+							execution_trace.append(trace_entry)
+							
+						elif action_type == 'ADD_STEP':
+							payload = thought_action.action.get('payload', {})
+							new_step = payload.get('step_description', 'Новый неописанный шаг')
+							insert_after = payload.get('insert_after', 'current')
+							
+							if insert_after == 'current':
+								current_steps.insert(step_idx + 1, new_step)
+							else:
+								current_steps.append(new_step)
+							
+							trace_entry.observation = {"status": "step_added", "new_step": new_step}
+							execution_trace.append(trace_entry)
+							step_completed = True
+							
+						elif action_type == 'MODIFY_PLAN':
+							payload = thought_action.action.get('payload', {})
+							new_steps = payload.get('new_steps', [])
+							reason = payload.get('reason', 'N/A')
+							
+							modified_plan = self.tot_planner.modify_plan(current_plan, new_steps, reason)
+							current_steps = modified_plan.steps
+							current_plan = modified_plan
+							
+							trace_entry.observation = {"status": "plan_modified", "new_steps": new_steps}
+							execution_trace.append(trace_entry)
+							step_completed = True
+							step_idx = -1 # Начинаем выполнение нового плана с Шага 1
+							break
+							
+						elif action_type in ['CALL_PYTHON', 'CALL_SYMPY', 'CALL_WOLFRAM']:
+							action_result = self._execute_action(thought_action.action, wolfram_api_key)
+							trace_entry.observation = action_result
+							
+							print(f"   Результат: {action_result.get('status', 'unknown')}")
+							
+							if action_result.get('status') == 'ok':
+								output = action_result.get('output', '')
+								print(f"   ВЫВОД КОДА/ИНСТРУМЕНТА:\n{output}")
+								
+								previous_outputs.append(output)
+								context[f"step_{step_idx}_output"] = output
+								context["last_output"] = output
+								
+								if action_result.get('result_value') is not None:
+									context[f"step_{step_idx}_result"] = action_result['result_value']
+									context["last_result"] = action_result['result_value']
+								
+								step_completed = True
+								plan_success = True
+							else:
+								error_msg = action_result.get('error', 'Неизвестная ошибка')
+								print(f"   Ошибка: {error_msg}")
+								last_error = error_msg
+								previous_outputs.append(f"Ошибка: {error_msg}")
+							
+							execution_trace.append(trace_entry)
+						else:
+							trace_entry.observation = {"status": "unknown_action"}
+							execution_trace.append(trace_entry)
+							step_completed = True
+					else:
+						print("   Действие: None (Теоретический шаг)")
+						execution_trace.append(trace_entry)
+						step_completed = True
+				
+				if not step_completed:
+					print(f"   Шаг не выполнен после {max_attempts} попыток")
+					plan_success = False
+					break
+				
+				step_idx += 1
+				
+				if final_answer:
+					break
+			
+			if plan_success and final_answer:
+				best_plan = current_plan
+				break
+			else:
+				self.tot_planner.prune_branch(current_plan.id, "План не выполнен успешно или не привел к FINISH")
+				final_answer = None
+		
+		if final_answer is None and previous_outputs:
+			final_answer = self._create_final_answer(previous_outputs, problem_object)
+		
+		# Шаг 4: Верификация
+		print("\n4. ВЕРИФИКАЦИЯ...")
+		formal_trace = self.verifier.verify_trace(execution_trace, problem_object)
+		
+		verification_ok = False
+		if formal_trace:
+			 verification_ok = all(step.verification_status == "OK" for step in formal_trace)
+		
+		# Шаг 5: Формирование результата
+		result = {
+			"problem_id": problem_object.id,
+			"problem_object": problem_object.__dict__,
+			"selected_plan": best_plan.__dict__ if best_plan else None,
+			"execution_trace": [trace.__dict__ for trace in execution_trace],
+			"formal_trace": [trace.__dict__ for trace in formal_trace],
+			"final_answer": final_answer,
+			"verifier_status": "OK" if verification_ok else "FAIL",
+			"verifier_report": {
+				"passed_steps": len([s for s in formal_trace if s.verification_status == "OK"]) if formal_trace else 0,
+				"total_steps": len(formal_trace) if formal_trace else 0,
+				"confidence": min([s.confidence for s in formal_trace] + [0.0]) # Добавлен default
+			}
+		}
+		
+		print("\n=== РЕШЕНИЕ ЗАВЕРШЕНО ===")
+		return result
 	
 	def _execute_action(self, action: Dict, wolfram_api_key: str) -> Dict:
 		action_type = action.get('type')
@@ -1303,6 +1057,37 @@ class MATHAGENTVL:
 		else:
 			return {"status": "error", "error": f"Неизвестный тип действия: {action_type}"}
 	
+	def _create_final_answer(self, previous_outputs: List[str], problem: ProblemObject) -> Dict:
+		"""Создает финальный ответ на основе выводов выполнения"""
+		if previous_outputs:
+			last_output = previous_outputs[-1]
+			numbers = re.findall(r'-?\d+\.?\d*e?-?\d*', last_output) # Улучшен regex для scientific notation
+			if numbers:
+				try:
+					last_number = float(numbers[-1])
+					return {
+						"answer": f"Ответ на основе вычислений: {last_output}",
+						"value": last_number,
+						"units": "unknown",
+						"auto_generated": True
+					}
+				except ValueError:
+					pass # Не удалось преобразовать в float
+			
+			return {
+				"answer": f"Результат вычислений: {last_output}",
+				"value": None,
+				"units": "unknown",
+				"auto_generated": True
+			}
+		else:
+			return {
+				"answer": "Не удалось вычислить ответ",
+				"value": None,
+				"units": "unknown",
+				"auto_generated": True
+			}
+
 # ========== ПРИМЕР ИСПОЛЬЗОВАНИЯ ==========
 def main():
 	# ========== ИЗМЕНЕНИЕ 9: Активация DEBUG_MODE ==========

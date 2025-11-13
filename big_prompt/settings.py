@@ -9,7 +9,7 @@ from typing import Dict, Any
 @dataclass
 class ModelRoutingConfig:
 	system1_model: str = field(default_factory=lambda: os.getenv("SYSTEM1_MODEL", "google/gemini-2.0-flash-lite-001"))
-	system2_model: str = field(default_factory=lambda: os.getenv("SYSTEM2_MODEL", "google/gemini-2.5-pro"))
+	system2_model: str = field(default_factory=lambda: os.getenv("SYSTEM2_MODEL", "google/gemini-2.0-flash-lite-001"))
 	system1_temperature: float = field(default_factory=lambda: float(os.getenv("SYSTEM1_TEMPERATURE", "0.3")))
 	system2_temperature: float = field(default_factory=lambda: float(os.getenv("SYSTEM2_TEMPERATURE", "0.15")))
 	planner_temperature: float = field(default_factory=lambda: float(os.getenv("PLANNER_TEMPERATURE", "0.6")))

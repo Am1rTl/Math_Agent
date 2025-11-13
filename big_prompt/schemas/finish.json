@@ -27,16 +27,20 @@
         "values": {
           "type": "object",
           "minProperties": 1,
-          "properties": {
-            "a": {
-              "type": "array",
-              "items": {
+          "additionalProperties": {
+            "oneOf": [
+              {
                 "type": "number"
               },
-              "minItems": 1
-            }
-          },
-          "additionalProperties": true
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 1
+              }
+            ]
+          }
         },
         "confidence": {
           "type": "number",

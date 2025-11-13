@@ -38,10 +38,17 @@ class SchemaValidator:
 		if not isinstance(values, dict):
 			errors.append("payload.values must be object")
 		else:
-			if "a" not in values or not isinstance(values["a"], list) or not values["a"]:
-				errors.append("payload.values.a must be non-empty list")
-			elif not all(isinstance(v, (int, float)) for v in values["a"]):
-				errors.append("payload.values.a must contain only numbers")
+			if not values:
+				errors.append("payload.values must contain at least one entry")
+			else:
+				for key, val in values.items():
+					if isinstance(val, list):
+						if not val:
+							errors.append(f"payload.values.{key} must be non-empty list of numbers")
+						elif not all(isinstance(v, (int, float)) for v in val):
+							errors.append(f"payload.values.{key} list must contain only numbers")
+					elif not isinstance(val, (int, float)):
+						errors.append(f"payload.values.{key} must be a number or list of numbers")
 		trace_id = payload.get("trace_id")
 		if not isinstance(trace_id, str) or len(trace_id) < 6:
 			errors.append("payload.trace_id must be string length>=6")
@@ -128,14 +135,15 @@ class LMJudge:
 		self.settings = settings or get_settings()
 		self.call_model = call_model
 		self.system_prompt = (
-			"Ты --- строгий судья. Проверяй, найдены ли числовые значения параметра 'a', "
-			"нет ли текстовых описаний вместо чисел, и согласуются ли ответы с задачей."
+			"Ты --- строгий судья. Проверяй, что payload.values содержит числовые значения "
+			"для всех целевых величин (например, a, вероятность и т.д.), что нет словесных "
+			"описаний вместо чисел и что ответ соответствует задаче."
 		)
 
 	def _judge_once(self, problem_text: str, answer: Dict[str, Any], shuffle: bool = False) -> Dict[str, Any]:
 		instructions = [
-			"Проверь, что values.a непустой список чисел.",
-			"Убедись, что ответ согласуется с постановкой задачи.",
+			"Проверь, что `values` содержит хотя бы одно числовое значение (число или список чисел).",
+			"Убедись, что ответ согласуется с постановкой задачи и целевыми величинами.",
 			"Верни JSON с полями score (0-1) и verdict (PASS/FAIL) и rationale.",
 		]
 		if shuffle:
