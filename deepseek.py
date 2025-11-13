@@ -25,8 +25,9 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "sk-or-v1-124aa7cfa349934a2
 #DEFAULT_MODEL = "microsoft/phi-4-multimodal-instruct"
 #DEFAULT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
 #DEFAULT_MODEL = "qwen/qwen3-32b"
-DEFAULT_MODEL = "google/gemini-2.0-flash-lite-001"
+#DEFAULT_MODEL = "google/gemini-2.0-flash-lite-001"
 #DEFAULT_MODEL = "google/gemini-2.5-pro"
+DEFAULT_MODEL = "openai/gpt-5-mini"
 
 
 # Инициализация клиента OpenRouter
@@ -807,8 +808,8 @@ class ToolExecutor:
 	def execute_wolfram(self, query: str, api_key: str, timeout_ms: int = 8000) -> Dict:
 		"""Выполняет запрос к WolframAlpha API"""
 		print(f"--- ВЫЗОВ WOLFRAMALPHA С ЗАПРОСОМ: {query} ---")
-		
-		if not api_key or api_key == "ERP3K8L5L3": # Проверка на ключ-заглушку
+		api_key = "ERP3K8L5L3"
+		if not api_key: # Проверка на ключ-заглушку
 			print("   Ошибка: API-ключ для WolframAlpha не предоставлен.")
 			return {
 				"status": "error",
@@ -1068,8 +1069,13 @@ class MATHAGENTVL:
 				"plan": current_plan.__dict__
 			}
 			
+			# --- ИЗМЕНЕНИЕ: Сброс трассировки/вывода ДЛЯ КАЖДОГО ПЛАНА ---
+			# Это гарантирует, что при провале Плана 1, 
+			# верификатор не будет смотреть на старые выводы от Плана 1, когда будет судить План 2
 			previous_outputs = []
-			execution_trace = []
+			execution_trace = [] # Важно: мы верифицируем только трассировку *текущего* плана
+			# -----------------------------------------------------------
+
 			plan_success = True
 			current_steps = current_plan.steps.copy()
 			
@@ -1204,12 +1210,14 @@ class MATHAGENTVL:
 									context["last_result"] = action_result['result_value']
 								
 								step_completed = True
-								plan_success = True
+								plan_success = True # Успех этого *шага*
 							else:
 								error_msg = action_result.get('error', 'Неизвестная ошибка')
 								print(f"   Ошибка: {error_msg}")
 								last_error = error_msg
 								previous_outputs.append(f"Ошибка: {error_msg}")
+								# plan_success остается True, но step_completed - False,
+								# что приведет к повторной попытке
 							
 							execution_trace.append(trace_entry)
 						else:
@@ -1223,73 +1231,97 @@ class MATHAGENTVL:
 				
 				if not step_completed:
 					print(f"   Шаг не выполнен после {max_attempts} попыток")
-					plan_success = False
-					break
+					plan_success = False # Успех *всего плана* теперь False
+					break # Выход из 'while step_idx...'
 				
 				step_idx += 1
 				
-				if final_answer:
+				if final_answer: # Если 'FINISH' был вызван и одобрен, выходим
 					break
 			
+			# --- ВОТ ГЛАВНОЕ ИЗМЕНЕНИЕ ---
+			# Этот блок теперь выполняется ПОСЛЕ КАЖДОГО плана,
+			# если он НЕ завершился успешным и одобренным 'FINISH'.
+			
 			if plan_success and final_answer:
+				# Случай 1: План завершился одобренным FINISH
 				best_plan = current_plan
-				break
+				break # Выходим из 'for plan_idx...'
+			
 			else:
-				self.tot_planner.prune_branch(current_plan.id, "План не выполнен успешно или не привел к FINISH")
-				final_answer = None
+				# Случай 2: План ПРОВАЛИЛСЯ (plan_success=False)
+				# Случай 3: План ВЫПОЛНИЛ все шаги, но не вызвал FINISH (plan_success=True, final_answer=None)
+				
+				print(f"\n   План {plan_idx + 1} ({current_plan.id}) завершился (без FINISH) или провалился. Запуск верификатора...")
+
+				# У нас есть *хоть что-нибудь* для верификации?
+				if execution_trace and previous_outputs:
+					# Да, у нас есть выводы. Попытаемся их верифицировать.
+					
+					# 1. Генерируем "предлагаемый" ответ из последнего вывода
+					proposed_answer = self._create_final_answer(previous_outputs, problem_object)
+					print(f"   Предполагаемый ответ (на основе последнего вывода): {proposed_answer.get('answer', 'N/A')}")
+
+					# 2. Вызываем верификатор
+					try:
+						verification_result = self.final_verifier.verify_answer(
+							problem_object, 
+							execution_trace, # Передаем трассировку *этого* плана
+							proposed_answer
+						)
+						
+						# 3. Принимаем решение
+						if verification_result.get('decision') == 'accept':
+							print("   Верификатор ПОДТВЕРДИЛ сгенерированный ответ.")
+							final_answer = proposed_answer
+							best_plan = current_plan # Засчитываем этот план как успешный
+							break # ВЫХОДИМ из 'for plan_idx...', т.к. нашли ответ
+						else:
+							reason = verification_result.get('reason', 'Ответ отклонен без причины.')
+							print(f"   Верификатор ОТКЛОНИЛ: {reason}")
+							# НЕ выходим, 'for plan_idx...' продолжится
+					
+					except Exception as e:
+						print(f"   Ошибка при вызове финального верификатора: {e}")
+						# НЕ выходим, 'for plan_idx...' продолжится
+				
+				else:
+					# У нас нет ни трассировки, ни выводов от этого плана
+					print("   Нет выводов для верификации.")
+
+				# Если верификатор не одобрил ответ (final_answer все еще None),
+				# отсекаем эту ветку и переходим к следующему плану
+				if final_answer is None: 
+					self.tot_planner.prune_branch(current_plan.id, "План не выполнен, либо верификатор отклонил результат")
+					final_answer = None # Явный сброс (на всякий случай)
+		
 		
 		# === ИЗМЕНЕНИЕ: ЛОГИКА ВЫЗОВА ВЕРИФИКАТОРА ПРИ ОТСУТСТВИИ 'FINISH' ===
+		# Этот блок теперь срабатывает ТОЛЬКО если 'for' цикл прошел до конца
+		# И 'final_answer' НИ РАЗУ не был установлен (ни через FINISH, ни через верификацию).
 		if final_answer is None:
-			print("\n   Ни один план не завершился действием 'FINISH'.")
-			if execution_trace and previous_outputs:
-				# Если был выполнен хотя бы один план, пытаемся верифицировать последний результат
-				print("   Запуск финального верификатора на основе последнего вывода...")
-				
-				# 1. Генерируем "предлагаемый" ответ из последнего вывода (как делал старый fallback)
-				proposed_answer = self._create_final_answer(previous_outputs, problem_object)
-				print(f"   Предполагаемый ответ: {proposed_answer.get('answer', 'N/A')}")
-
-				# 2. Вызываем верификатор
-				try:
-					verification_result = self.final_verifier.verify_answer(
-						problem_object, 
-						execution_trace, # Передаем трассировку последнего выполненного плана
-						proposed_answer
-					)
-					
-					# 3. Принимаем решение
-					if verification_result.get('decision') == 'accept':
-						print("   Верификатор ПОДТВЕРДИЛ сгенерированный ответ.")
-						final_answer = proposed_answer
-					else:
-						reason = verification_result.get('reason', 'Ответ отклонен без причины.')
-						print(f"   Верификатор ОТКЛОНИЛ сгенерированный ответ: {reason}")
-						final_answer = {
-							"answer": f"Задача не решена. Верификатор: {reason}",
-							"value": None,
-							"auto_generated": True,
-							"verification_failed": True
-						}
-				except Exception as e:
-					print(f"   Ошибка при вызове финального верификатора в fallback-режиме: {e}")
-					final_answer = self._create_final_answer(previous_outputs, problem_object) # Возвращаемся к старому поведению при ошибке
+			print("\n   Ни один план не дал подтвержденного ответа.")
 			
-			elif previous_outputs:
-					# На всякий случай (если execution_trace пуст, но outputs есть - маловероятно)
-				print("   Нет трассировки, используется старый метод fallback...")
-				final_answer = self._create_final_answer(previous_outputs, problem_object)
-			else:
-				# Планы не выполнены, вывода нет
+			# Нам больше не нужно здесь вызывать верификатор, т.к. он уже вызывался
+			# в конце каждого плана.
+			# Просто создаем финальный ответ-заглушку.
+			
+			if not (execution_trace or previous_outputs):
+				# Это редкий случай, когда ВООБЩЕ ничего не было выполнено
 				print("   Нет успешных выводов для создания ответа.")
-				final_answer = {
-					"answer": "Не удалось вычислить ответ. Ни один план не дал результата.",
-					"value": None,
-					"auto_generated": True
-				}
+				
+			final_answer = {
+				"answer": "Не удалось вычислить ответ. Ни один план не дал результата, и ни одна верификация не прошла.",
+				"value": None,
+				"auto_generated": True,
+				"verification_failed": True # Добавляем флаг, что верификация провалена
+			}
 		# === КОНЕЦ ИЗМЕНЕНИЯ ===
 		
-		# Шаг 4: Верификация
+		# Шаг 4: Верификация (формальная)
 		print("\n4. ВЕРИФИКАЦИЯ...")
+		# Важно: execution_trace здесь будет содержать трассировку ПОСЛЕДНЕГО
+		# выполненного плана (или того, который дал ответ)
 		formal_trace = self.verifier.verify_trace(execution_trace, problem_object)
 		
 		verification_ok = False
