@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DeepSeek Task Workspace</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body data-task-id="{{ task_id }}">
+	<div class="background-glow"></div>
+	<div id="single-shell">
+		<header class="single-header">
+			<button id="back-home" class="ghost-button">← Все задачи</button>
+			<div class="single-header-copy">
+				<h1>Индивидуальный workspace</h1>
+				<p>Здесь отображается только выбранная задача и её выполнение.</p>
+			</div>
+			<div class="single-header-actions">
+				<button id="refresh-task" class="ghost-button">Обновить</button>
+				<button id="delete-task" class="ghost-button danger">Удалить</button>
+			</div>
+		</header>
+		<section id="single-task-workspace" class="task-workspace task-workspace-single"></section>
+		<div id="single-task-empty" class="empty-state">
+			<div class="empty-ring"></div>
+			<h2>Загружаем задачу…</h2>
+			<p>Ждём ответа агента и сразу покажем детали.</p>
+		</div>
+	</div>
+
+
+	<script type="module" src="{{ url_for('static', filename='js/task.js') }}"></script>
+</body>
+</html>

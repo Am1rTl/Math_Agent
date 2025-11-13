@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DeepSeek Plan Studio</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+	<div class="background-glow"></div>
+	<div id="app-shell">
+		<header class="hero-card">
+			<div class="hero-content">
+				<h1>DeepSeek Plan Studio</h1>
+				<p>
+					Создавай, исследуй и исполняй интеллектуальные планы решения задач.
+					Планы подсвечиваются, шаги раскрываются плавно, а история всегда под рукой.
+				</p>
+			</div>
+			<form id="task-form" class="task-form">
+				<label for="problem">Новая задача</label>
+				<textarea id="problem" name="problem" placeholder="Опиши математическую задачу или цель..."></textarea>
+				<div class="form-footer">
+					<button type="submit">Сгенерировать планы</button>
+					<span class="hint">Каждая задача открывается в отдельном окне workspace</span>
+				</div>
+			</form>
+		</header>
+
+		<div class="workspace-layout">
+			<section id="task-workspace" class="task-workspace">
+				<div class="empty-state" id="workspace-empty">
+					<div class="empty-ring"></div>
+					<h2>Workspace пуст</h2>
+					<p>Создай первую задачу, чтобы увидеть магию планирования.</p>
+				</div>
+			</section>
+
+			<aside class="history-panel">
+				<div class="history-header">
+					<h3>История задач</h3>
+					<button id="refresh-history" title="Обновить">&#x21bb;</button>
+				</div>
+				<ul id="history-list" class="history-list"></ul>
+			</aside>
+		</div>
+	</div>
+
+	<script src="{{ url_for('static', filename='js/app.js') }}" type="module"></script>
+</body>
+</html>
