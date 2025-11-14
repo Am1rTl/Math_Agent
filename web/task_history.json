@@ -673,5 +673,203 @@
     ],
     "is_generating": false,
     "error": null
+  },
+  {
+    "id": "8969f9d2-5bfb-4d56-9134-18ba4a566f22",
+    "problem_text": "Рассчитай сумму чисел от 1 до 100",
+    "created_at": 1763156297.693504,
+    "updated_at": 1763156334.1554573,
+    "status": "running",
+    "problem_object": {
+      "id": "unique_id_1",
+      "statement": "ЗАДАЧА: Рассчитай сумму чисел от 1 до 100",
+      "entities": [
+        {
+          "name": "start",
+          "value": "1",
+          "unit": null
+        },
+        {
+          "name": "end",
+          "value": "100",
+          "unit": null
+        }
+      ],
+      "constraints": [],
+      "goals": [],
+      "hypotheses": [],
+      "irrelevant": [],
+      "notes": "Твоя задача - *только* извлечь данные, не решать задачу."
+    },
+    "plans": [
+      {
+        "id": "plan_1",
+        "summary": "Прямой расчет с помощью формулы",
+        "steps": [
+          "Использовать формулу суммы арифметической прогрессии: S = n/2 * (a1 + an)."
+        ],
+        "estimated_complexity": "low",
+        "estimated_tooling": [
+          "бумажная запись"
+        ],
+        "heuristic_score": 0.9,
+        "rationale": "Не указано"
+      },
+      {
+        "id": "plan_2",
+        "summary": "Цикл в программе",
+        "steps": [
+          "Написать программу на языке программирования, использующую цикл для сложения чисел от 1 до 100.",
+          "Запустить программу и получить результат."
+        ],
+        "estimated_complexity": "medium",
+        "estimated_tooling": [
+          "Python",
+          "Java"
+        ],
+        "heuristic_score": 0.8,
+        "rationale": "Не указано"
+      },
+      {
+        "id": "plan_5",
+        "summary": "Программирование на Python с использованием цикла",
+        "steps": [
+          "Написать скрипт на Python с использованием цикла for для суммирования.",
+          "Запустить скрипт и получить результат."
+        ],
+        "estimated_complexity": "medium",
+        "estimated_tooling": [
+          "Python"
+        ],
+        "heuristic_score": 0.8,
+        "rationale": "Не указано"
+      },
+      {
+        "id": "plan_3",
+        "summary": "Использование онлайн-калькулятора",
+        "steps": [
+          "Открыть онлайн-калькулятор для суммирования.",
+          "Ввести диапазон чисел от 1 до 100.",
+          "Получить результат."
+        ],
+        "estimated_complexity": "low",
+        "estimated_tooling": [
+          "браузер"
+        ],
+        "heuristic_score": 0.7,
+        "rationale": "Не указано"
+      },
+      {
+        "id": "plan_4",
+        "summary": "Использование Excel/Google Таблиц",
+        "steps": [
+          "Открыть Excel или Google Таблицы.",
+          "Ввести числа от 1 до 100 в ячейки.",
+          "Использовать функцию СУММ для автоматического расчета.",
+          "Получить результат."
+        ],
+        "estimated_complexity": "low",
+        "estimated_tooling": [
+          "Excel",
+          "Google Таблицы"
+        ],
+        "heuristic_score": 0.7,
+        "rationale": "Не указано"
+      }
+    ],
+    "selected_plan_id": "plan_1",
+    "result_preview": null,
+    "final_answer": null,
+    "execution_trace": [],
+    "formal_trace": [],
+    "progress_log": [
+      {
+        "type": "plan_generation_start",
+        "message": "Генерация планов запущена.",
+        "timestamp": 1763156297.6947331
+      },
+      {
+        "type": "plan_generation_complete",
+        "message": "Генерация планов завершена.",
+        "timestamp": 1763156322.6064467
+      },
+      {
+        "type": "run_start",
+        "message": "Запуск выполнения плана plan_1",
+        "timestamp": 1763156334.1420434
+      },
+      {
+        "type": "start",
+        "message": "=== НАЧАЛО РЕШЕНИЯ ЗАДАЧИ ===",
+        "timestamp": 1763156334.144524
+      },
+      {
+        "type": "start",
+        "message": "Задача: Рассчитай сумму чисел от 1 до 100",
+        "timestamp": 1763156334.1451097
+      },
+      {
+        "type": "stage",
+        "message": "\n1. ФОРМАЛИЗАЦИЯ ВХОДА...",
+        "timestamp": 1763156334.145733
+      },
+      {
+        "type": "stage",
+        "message": "ProblemObject создан: unique_id_1",
+        "timestamp": 1763156334.146329
+      },
+      {
+        "type": "stage",
+        "message": "\n2. ГЕНЕРАЦИЯ ПЛАНОВ...",
+        "timestamp": 1763156334.1469114
+      },
+      {
+        "type": "log",
+        "message": "Сгенерировано планов: 5",
+        "timestamp": 1763156334.1475773
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 1: Прямой расчет с помощью формулы (оценка: 0.9)",
+        "timestamp": 1763156334.15062
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 2: Цикл в программе (оценка: 0.8)",
+        "timestamp": 1763156334.151343
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 3: Программирование на Python с использованием цикла (оценка: 0.8)",
+        "timestamp": 1763156334.151946
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 4: Использование онлайн-калькулятора (оценка: 0.7)",
+        "timestamp": 1763156334.1525698
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 5: Использование Excel/Google Таблиц (оценка: 0.7)",
+        "timestamp": 1763156334.1532469
+      },
+      {
+        "type": "plan_start",
+        "message": "\n3. ВЫПОЛНЕНИЕ ПЛАНА 1: plan_1",
+        "timestamp": 1763156334.1539688
+      },
+      {
+        "type": "plan_strategy",
+        "message": "   Стратегия: Прямой расчет с помощью формулы",
+        "timestamp": 1763156334.154651
+      },
+      {
+        "type": "step_start",
+        "message": "\n   Шаг 1: Использовать формулу суммы арифметической прогрессии: S = n/2 * (a1 + an).",
+        "timestamp": 1763156334.1554544
+      }
+    ],
+    "is_generating": false,
+    "error": null
   }
 ]
