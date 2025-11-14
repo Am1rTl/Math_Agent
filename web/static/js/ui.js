@@ -140,46 +140,6 @@ const splitStep = (text = "", index = 0) => {
 	};
 };
 
-const createTimeline = task => {
-	const timeline = document.createElement("div");
-	timeline.className = "timeline";
-
-	const entries = task.execution_trace || [];
-	if (!entries.length) {
-		const placeholder = document.createElement("article");
-		placeholder.className = "timeline-item";
-		placeholder.innerHTML = `
-			<h4>Ещё нет действий</h4>
-			<p>Запусти план, чтобы увидеть трассировку ReAct агента.</p>
-		`;
-		timeline.appendChild(placeholder);
-		return timeline;
-	}
-
-	entries.forEach(entry => {
-		const item = document.createElement("article");
-		item.className = "timeline-item";
-		item.innerHTML = `
-			<h4>${entry.step_id}</h4>
-			<p><strong>Мысль:</strong> ${entry.thought || "—"}</p>
-			<p><strong>Действие:</strong> ${entry.action ? entry.action.type : "—"}</p>
-			<p><strong>Наблюдение:</strong> ${formatObservation(entry.observation)}</p>
-		`;
-		timeline.appendChild(item);
-	});
-
-	return timeline;
-};
-
-const createFinalAnswerBlock = task => {
-	const block = document.createElement("div");
-	block.className = "final-answer";
-	block.innerHTML = task.final_answer
-		? `<h3>Финальный ответ</h3><p>${task.final_answer.answer || "—"}</p>`
-		: `<h3>Финальный ответ</h3><p>Пока нет результатов</p>`;
-	return block;
-};
-
 const createProgressFeed = task => {
 	const feed = document.createElement("section");
 	feed.className = "progress-feed";
@@ -239,82 +199,6 @@ const formatObservation = observation => {
 	return JSON.stringify(observation, null, 2);
 };
 
-const createExecutionPanel = task => {
-	const panel = document.createElement("section");
-	panel.className = "execution-panel";
-	panel.innerHTML = `
-		<div class="panel-header">
-			<h3>Детали выполнения</h3>
-			<span class="panel-badge">${task.status === "running" ? "в процессе" : task.execution_trace?.length ? "завершено" : "ожидание"}</span>
-		</div>
-	`;
-
-	const list = document.createElement("div");
-	list.className = "execution-list";
-
-	const trace = task.execution_trace || [];
-	if (!trace.length) {
-		const placeholder = document.createElement("article");
-		placeholder.className = "timeline-item";
-		placeholder.innerHTML = `
-			<h4>${task.status === "running" ? "Агент начал работу" : "Ещё нет действий"}</h4>
-			<p>${
-				task.status === "running"
-					? "Следи за прогрессом: как только появятся новые мысли, они сразу отобразятся ниже."
-					: "Запусти план, чтобы увидеть пошаговую картину: мысли, инструменты и выводы."
-			}</p>
-		`;
-		panel.appendChild(placeholder);
-	} else {
-		trace.forEach((entry, index) => {
-			const status = determineStepStatus(task, index, trace.length);
-			list.appendChild(createExecutionStep(entry, status, index));
-		});
-
-		panel.appendChild(list);
-	}
-
-	return panel;
-};
-
-const determineStepStatus = (task, index, total) => {
-	if (task.status === "running" && index === total - 1) {
-		return "current";
-	}
-	return "done";
-};
-
-const createExecutionStep = (entry, status, index) => {
-	const item = document.createElement("div");
-	item.className = `step-item execution ${status} open`;
-
-	const toggle = document.createElement("button");
-	toggle.className = "step-toggle";
-	const headerTitle = entry.thought?.slice(0, 80) || `Шаг ${index + 1}`;
-	const indicatorLabel = status === "current" ? "Сейчас" : "Готово";
-	const indicatorIcon = status === "current" ? "●" : "✓";
-	toggle.innerHTML = `
-		<span class="step-title">${headerTitle}</span>
-		<span class="step-meta">
-			<span class="step-indicator ${status}">${indicatorIcon} ${indicatorLabel}</span>
-			<span class="step-chevron">›</span>
-		</span>
-	`;
-	toggle.addEventListener("click", () => item.classList.toggle("open"));
-
-	const body = document.createElement("div");
-	body.className = "step-body";
-	body.innerHTML = `
-		<p><strong>Действие:</strong> ${entry.action ? entry.action.type : "—"}</p>
-		${renderCodeBlock(entry.action?.payload)}
-		<p><strong>Наблюдение:</strong></p>
-		<pre>${formatObservation(entry.observation)}</pre>
-	`;
-
-	item.append(toggle, body);
-	return item;
-};
-
 const renderCodeBlock = payload => {
 	if (!payload) return "";
 	const code = payload.code || payload.expression || payload.query || payload.prompt;
@@ -345,6 +229,118 @@ export const ensurePlanSelection = task => {
 	if (sorted.length) {
 		task.selected_plan_id = sorted[0].id;
 	}
+};
+
+const createAgentSteps = task => {
+	const container = document.createElement("div");
+	container.className = "agent-steps-container";
+
+	const header = document.createElement("div");
+	header.className = "panel-header";
+	header.innerHTML = "<h3>Шаги агента</h3>";
+	container.appendChild(header);
+
+	const log = task.progress_log || [];
+	const steps = [];
+	let currentStep = null;
+
+	log.forEach(entry => {
+		if (entry.type === "step_start") {
+			if (currentStep) {
+				steps.push(currentStep);
+			}
+			currentStep = {
+				title: entry.message,
+				thought: null,
+				action: null,
+				result: null
+			};
+		} else if (currentStep) {
+			if (entry.type === "thought") {
+				currentStep.thought = entry.message;
+			} else if (entry.type === "action") {
+				currentStep.action = entry.message;
+			} else if (entry.type === "tool_output") {
+				currentStep.result = entry.message;
+			}
+		}
+	});
+
+	if (currentStep) {
+		steps.push(currentStep);
+	}
+
+	if (!steps.length) {
+		const placeholder = document.createElement("div");
+		placeholder.className = "steps-placeholder";
+		placeholder.textContent = "Агент еще не начал выполнение шагов.";
+		container.appendChild(placeholder);
+		return container;
+	}
+
+	const list = document.createElement("div");
+	list.className = "agent-steps-list";
+
+	steps.forEach((step, index) => {
+		const stepNode = document.createElement("div");
+		const isCurrent = task.status === "running" && index === steps.length - 1;
+		stepNode.className = `agent-step-node ${isCurrent ? "current" : "done"}`;
+
+		const stepHeader = document.createElement("div");
+		stepHeader.className = "step-header";
+		stepHeader.innerHTML = `
+			<div class="step-icon"></div>
+			<div class="step-title">${step.title}</div>
+		`;
+		stepNode.appendChild(stepHeader);
+
+		const stepBody = document.createElement("div");
+		stepBody.className = "step-body";
+		if (step.thought) {
+			stepBody.innerHTML += `<div class="step-thought"><strong>Мысль:</strong> ${step.thought}</div>`;
+		}
+		if (step.action) {
+			stepBody.innerHTML += `<div class="step-action"><strong>Действие:</strong> ${step.action}</div>`;
+		}
+		if (step.result) {
+			stepBody.innerHTML += `<div class="step-result"><strong>Результат:</strong><pre>${step.result}</pre></div>`;
+		}
+		stepNode.appendChild(stepBody);
+
+		list.appendChild(stepNode);
+
+		if (index < steps.length - 1) {
+			const connector = document.createElement("div");
+			connector.className = "step-connector";
+			list.appendChild(connector);
+		}
+	});
+
+	container.appendChild(list);
+	return container;
+};
+
+const createFinalAnswerBlock = task => {
+	const block = document.createElement("div");
+	block.className = "final-answer-container";
+
+	const header = document.createElement("div");
+	header.className = "panel-header";
+	header.innerHTML = "<h3>Финальный ответ</h3>";
+
+	const body = document.createElement("div");
+	body.className = "final-answer-body";
+
+	if (task.final_answer) {
+		body.innerHTML = `<p>${task.final_answer.answer || "—"}</p>`;
+	} else if (task.status === "completed") {
+		body.innerHTML = `<p>Задача выполнена, но финальный ответ отсутствует.</p>`;
+	} else {
+		body.innerHTML = `<p>Пока нет результатов</p>`;
+	}
+
+	block.append(header, body);
+	return block;
 };
 
 export const createTaskWindow = (task, options = {}) => {
@@ -407,20 +403,19 @@ export const createTaskWindow = (task, options = {}) => {
 		planActions.append(createLoader());
 	}
 
-	const progressFeed = createProgressFeed(task);
-	const executionPanel = createExecutionPanel(task);
-	const timeline = createTimeline(task);
-	const finalAnswer = createFinalAnswerBlock(task);
+	const executionContainer = document.createElement("div");
+	executionContainer.className = "execution-container";
 
-	windowEl.append(
-		...headerFragments,
-		planGrid,
-		planActions,
-		arrow,
-		progressFeed,
-		executionPanel,
-		timeline,
-		finalAnswer
-	);
+	const leftPanel = document.createElement("div");
+	leftPanel.className = "execution-left-panel";
+	leftPanel.append(createProgressFeed(task));
+
+	const rightPanel = document.createElement("div");
+	rightPanel.className = "execution-right-panel";
+	rightPanel.append(createAgentSteps(task), createFinalAnswerBlock(task));
+
+	executionContainer.append(leftPanel, rightPanel);
+
+	windowEl.append(...headerFragments, planGrid, planActions, arrow, executionContainer);
 	return windowEl;
 };

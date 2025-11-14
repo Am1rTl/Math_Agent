@@ -1,0 +1,289 @@
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:20:09] "[33mGET /task/926a08b3 HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:23:16] "[33mGET /task/926a08b3 HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:25:30] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:28:18] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:30:34] "GET /api/debug/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:32:06] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plan generation started.
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Formalizing input...
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[35m[1mPOST /api/tasks HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /tasks/817a055f-439e-484b-81cb-821790bd0810 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /static/js/task.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[36mGET /static/js/ui.js HTTP/1.1[0m" 304 -
+INFO:root:Getting task 817a055f-439e-484b-81cb-821790bd0810
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /api/tasks/817a055f-439e-484b-81cb-821790bd0810 HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Input formalized. Proposing plans...
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plans proposed. Sorting and converting to dicts...
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plans processed. Updating task state...
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Task state updated.
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plan generation thread finished.
+INFO:root:Loaded 1 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:53] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:53] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:53] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:53] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:53] "GET /api/tasks HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "[35m[1mPOST /api/tasks HTTP/1.1[0m" 201 -
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Plan generation started.
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Formalizing input...
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "GET /tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "GET /static/js/task.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "[36mGET /static/js/ui.js HTTP/1.1[0m" 304 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:54] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:56] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:41:58] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:00] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:02] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:04] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Input formalized. Proposing plans...
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:06] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:08] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:10] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:12] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Plans proposed. Sorting and converting to dicts...
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Plans processed. Updating task state...
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Task state updated.
+INFO:root:[16ae859d-b8a9-4d4d-ab81-41410fd60f4a] Plan generation thread finished.
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:14] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:14] "POST /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a/run HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:16] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:18] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:20] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:22] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:24] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:26] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:28] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:30] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:32] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:34] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:36] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:38] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:40] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:42] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:44] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:46] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:48] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:50] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:52] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:54] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:56] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:42:58] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:00] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:02] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:04] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:06] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:08] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:10] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:12] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Getting task 16ae859d-b8a9-4d4d-ab81-41410fd60f4a
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:43:14] "GET /api/tasks/16ae859d-b8a9-4d4d-ab81-41410fd60f4a HTTP/1.1" 200 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:57] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:57] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:57] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:57] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:57] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Plan generation started.
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Formalizing input...
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "[35m[1mPOST /api/tasks HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "GET /tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "GET /static/js/task.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "[36mGET /static/js/ui.js HTTP/1.1[0m" 304 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:44:58] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:00] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:02] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:04] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:06] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:08] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:10] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:12] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:14] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:16] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:18] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:20] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Input formalized. Proposing plans...
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:22] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:24] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:26] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:28] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:30] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:32] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:34] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:36] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:38] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:40] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:42] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:44] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:46] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Plans proposed. Sorting and converting to dicts...
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Plans processed. Updating task state...
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Task state updated.
+INFO:root:[833d9c63-5f22-4e48-a862-ab0e31bdc4fc] Plan generation thread finished.
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:48] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:48] "POST /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc/run HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:50] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:52] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:54] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:56] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:45:58] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:46:00] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
+INFO:root:Getting task 833d9c63-5f22-4e48-a862-ab0e31bdc4fc
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:46:02] "GET /api/tasks/833d9c63-5f22-4e48-a862-ab0e31bdc4fc HTTP/1.1" 200 -
