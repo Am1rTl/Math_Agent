@@ -74,9 +74,10 @@ def run_task(task_id: str):
 	payload = request.get_json(silent=True) or {}
 	plan_id = payload.get("plan_id")
 	wolfram_key = payload.get("wolfram_key") or os.getenv("WOLFRAM_API_KEY")
+	long_poll = payload.get("long_poll", False)
 
 	try:
-		result = task_manager.run_task(task_id, plan_id, wolfram_key)
+		result = task_manager.run_task(task_id, plan_id, wolfram_key, long_poll)
 	except ValueError as exc:
 		return _error(str(exc), 404)
 	except Exception as exc:

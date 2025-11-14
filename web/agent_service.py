@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import logging
 
 from web.agent_core import (
 	InputFormalizer,
@@ -14,6 +15,8 @@ from web.agent_core import (
 	ProblemObject,
 	ToTPlanner
 )
+
+logging.basicConfig(filename='agent_service.log', level=logging.INFO)
 
 
 class TaskManager:
@@ -156,7 +159,13 @@ class TaskManager:
 
 		return self._public_view(task_payload)
 
-	def run_task(self, task_id: str, plan_id: Optional[str], wolfram_key: Optional[str]) -> Dict[str, Any]:
+	def run_task(
+		self,
+		task_id: str,
+		plan_id: Optional[str],
+		wolfram_key: Optional[str],
+		long_poll: bool = False
+	) -> Dict[str, Any]:
 		with self._lock:
 			task = self._tasks.get(task_id)
 			if not task:
@@ -181,23 +190,24 @@ class TaskManager:
 			"message": f"Запуск выполнения плана {plan_id}"
 		})
 
-		def progress_callback(event: Dict[str, Any]):
-			self._append_progress(task_id, event)
+		def _execute():
+			def progress_callback(event: Dict[str, Any]):
+				self._append_progress(task_id, event)
 
-		try:
-			result = self._execute_with_plan(task, plan_id, wolfram_key, progress_callback)
-		except Exception as exc:
-			with self._lock:
-				task["status"] = "failed"
-				task["result_preview"] = {"answer": f"Ошибка выполнения: {exc}"}
-				task["updated_at"] = time.time()
-				self._persist()
-			self._append_progress(task_id, {
-				"type": "run_error",
-				"message": f"Ошибка выполнения: {exc}"
-			})
-			raise
-	
+			try:
+				result = self._execute_with_plan(task, plan_id, wolfram_key, progress_callback)
+			except Exception as exc:
+				with self._lock:
+					task["status"] = "failed"
+					task["result_preview"] = {"answer": f"Ошибка выполнения: {exc}"}
+					task["updated_at"] = time.time()
+					self._persist()
+				self._append_progress(task_id, {
+					"type": "run_error",
+					"message": f"Ошибка выполнения: {exc}"
+				})
+				raise
+
 			with self._lock:
 				task["status"] = "completed" if result.get("final_answer") else "failed"
 				task["result_preview"] = result.get("final_answer")
@@ -206,14 +216,22 @@ class TaskManager:
 				task["formal_trace"] = result.get("formal_trace", [])
 				task["updated_at"] = time.time()
 				self._persist()
-				public_task = self._public_view(task)
-	
+
 			self._append_progress(task_id, {
 				"type": "run_complete",
 				"message": "Выполнение задачи завершено."
 			})
-	
-			return {"task": public_task, "result": result}
+
+		execution_thread = threading.Thread(target=_execute, daemon=True)
+		execution_thread.start()
+		self._execution_threads[task_id] = execution_thread
+
+		if long_poll:
+			execution_thread.join()
+
+		with self._lock:
+			public_task = self._public_view(task)
+		return {"task": public_task}
 
 	def delete_task(self, task_id: str) -> None:
 		with self._lock:
@@ -230,17 +248,23 @@ class TaskManager:
 			"type": "plan_generation_start",
 			"message": "Генерация планов запущена."
 		})
+		logging.info(f"[{task_id}] Plan generation started.")
 
 		try:
+			logging.info(f"[{task_id}] Formalizing input...")
 			problem_object = formalizer.formalize(problem_text)
+			logging.info(f"[{task_id}] Input formalized. Proposing plans...")
 			plans = planner.propose_plans(problem_object)
+			logging.info(f"[{task_id}] Plans proposed. Sorting and converting to dicts...")
 			plans.sort(key=lambda plan: getattr(plan, "heuristic_score", 0.0), reverse=True)
 			plan_dicts = [self._plan_to_dict(plan) for plan in plans]
 			best_plan_id = plan_dicts[0]["id"] if plan_dicts else None
+			logging.info(f"[{task_id}] Plans processed. Updating task state...")
 
 			with self._lock:
 				task = self._tasks.get(task_id)
 				if not task:
+					logging.warning(f"[{task_id}] Task not found after plan generation.")
 					return
 				task["problem_object"] = self._problem_to_dict(problem_object)
 				task["plans"] = plan_dicts
@@ -250,12 +274,14 @@ class TaskManager:
 				task["is_generating"] = False
 				task["error"] = None
 				self._persist()
+			logging.info(f"[{task_id}] Task state updated.")
 
 			self._append_progress(task_id, {
 				"type": "plan_generation_complete",
 				"message": "Генерация планов завершена."
 			})
 		except Exception as exc:
+			logging.error(f"[{task_id}] Error during plan generation: {exc}", exc_info=True)
 			with self._lock:
 				task = self._tasks.get(task_id)
 				if not task:
@@ -271,6 +297,7 @@ class TaskManager:
 				"message": f"Ошибка генерации планов: {exc}"
 			})
 		finally:
+			logging.info(f"[{task_id}] Plan generation thread finished.")
 			self._plan_threads.pop(task_id, None)
 
 	def _execute_with_plan(

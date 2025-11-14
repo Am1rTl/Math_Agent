@@ -759,6 +759,12 @@ body {
 	letter-spacing: 0.05em;
 }
 
+.execution-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
 .execution-panel {
 	margin-top: 12px;
 	padding: 18px;
@@ -817,18 +823,6 @@ body {
 	overflow-x: auto;
 }
 
-.execution-container {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 16px;
-}
-
-.execution-panel pre {
-	color: var(--text-primary);
-	font-size: 0.85rem;
-	line-height: 1.4;
-}
-
 .agent-steps-container {
 	padding: 18px;
 	border-radius: 24px;
@@ -839,18 +833,24 @@ body {
 
 .agent-steps-list {
 	display: flex;
-	align-items: center;
-	justify-content: center;
+	flex-direction: column;
+	align-items: stretch;
 	padding: 16px 0;
+	gap: 16px;
 }
 
 .agent-step-node {
+	padding: 16px;
+	border-radius: 18px;
+	background: rgba(0, 0, 0, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-header {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	gap: 8px;
-	color: var(--text-muted);
-	font-size: 0.85rem;
+	gap: 12px;
+	margin-bottom: 12px;
 }
 
 .step-icon {
@@ -879,10 +879,24 @@ body {
 }
 
 .step-connector {
-	flex: 1;
-	height: 2px;
-	background-color: var(--text-muted);
-	min-width: 20px;
+	display: none;
+}
+
+.step-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	color: var(--text-muted);
+}
+
+.step-body pre {
+	background: rgba(0, 0, 0, 0.35);
+	padding: 12px;
+	border-radius: 14px;
+	overflow-x: auto;
+	color: var(--text-primary);
+	font-size: 0.85rem;
+	line-height: 1.4;
 }
 
 .final-answer-container {

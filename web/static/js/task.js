@@ -74,24 +74,31 @@ const handleRunTask = async taskIdentifier => {
 	state.isRunning = true;
 	render();
 
-	const response = await fetch(`/api/tasks/${taskIdentifier}/run`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ plan_id: state.task.selected_plan_id })
-	});
+	const longPoll = async () => {
+		try {
+			const response = await fetch(`/api/tasks/${taskIdentifier}/run`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ plan_id: state.task.selected_plan_id, long_poll: true })
+			});
 
-	if (!response.ok) {
-		const payload = await response.json();
-		showToast(payload.error || "Ошибка выполнения плана.", "error");
-		state.isRunning = false;
-		render();
-		return;
-	}
+			if (!response.ok) {
+				const payload = await response.json();
+				throw new Error(payload.error || "Ошибка выполнения плана.");
+			}
 
-	const payload = await response.json();
-	state.task = payload.task;
-	state.isRunning = false;
-	render();
+			const payload = await response.json();
+			state.task = payload.task;
+			state.isRunning = false;
+			render();
+		} catch (error) {
+			showToast(error.message, "error");
+			state.isRunning = false;
+			render();
+		}
+	};
+
+	longPoll();
 };
 
 const handleDelete = async () => {
@@ -117,4 +124,3 @@ const initControls = () => {
 
 initControls();
 fetchTask(false);
-setInterval(() => fetchTask(true), 2000);
