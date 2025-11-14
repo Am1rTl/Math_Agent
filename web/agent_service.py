@@ -36,6 +36,7 @@ class TaskManager:
 
 	def _load_history(self) -> None:
 		if not self.history_path.exists():
+			logging.info("History file not found.")
 			return
 
 		with self.history_path.open("r", encoding="utf-8") as fh:
@@ -43,9 +44,14 @@ class TaskManager:
 				data = json.load(fh)
 				for task in data:
 					self._tasks[task["id"]] = task
+				logging.info(f"Loaded {len(self._tasks)} tasks from history.")
 				self._resume_pending_generations()
 			except json.JSONDecodeError:
 				# Corrupted history shouldn't block the service; start fresh.
+				logging.warning("History file is corrupted. Starting fresh.")
+				self._tasks = {}
+			except Exception as e:
+				logging.error(f"Error loading history: {e}")
 				self._tasks = {}
 
 	def _persist(self) -> None:
@@ -120,8 +126,12 @@ class TaskManager:
 
 	def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:
 		with self._lock:
+			logging.info(f"Getting task {task_id}")
 			task = self._tasks.get(task_id)
-			return self._public_view(task) if task else None
+			if not task:
+				logging.warning(f"Task {task_id} not found.")
+				return None
+			return self._public_view(task)
 
 	def create_task(self, problem_text: str) -> Dict[str, Any]:
 		task_id = str(uuid.uuid4())

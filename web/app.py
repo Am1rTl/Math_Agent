@@ -85,6 +85,10 @@ def run_task(task_id: str):
 
 	return jsonify(result)
 
+@app.route("/api/debug/tasks", methods=["GET"])
+def debug_tasks():
+    return jsonify(task_manager._tasks)
+
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)

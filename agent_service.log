@@ -1,2 +1,83 @@
 WARNING:werkzeug: * Debugger is active!
 INFO:werkzeug: * Debugger PIN: 132-491-319
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:20:09] "[33mGET /task/926a08b3 HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:23:16] "[33mGET /task/926a08b3 HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:25:30] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:28:18] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:30:34] "GET /api/debug/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:root:Loaded 2 tasks from history.
+INFO:root:Loaded 2 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:32:06] "[33mGET /task/926a08b3-0e9c-4014-83f7-0631e1e7510a HTTP/1.1[0m" 404 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:34:44] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:36:00] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:37:16] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:Loaded 0 tasks from history.
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 132-491-319
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/css/styles.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/js/app.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /static/js/ui.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:36] "GET /api/tasks HTTP/1.1" 200 -
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plan generation started.
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Formalizing input...
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[35m[1mPOST /api/tasks HTTP/1.1[0m" 201 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /tasks/817a055f-439e-484b-81cb-821790bd0810 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /static/js/task.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "[36mGET /static/js/ui.js HTTP/1.1[0m" 304 -
+INFO:root:Getting task 817a055f-439e-484b-81cb-821790bd0810
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:38:37] "GET /api/tasks/817a055f-439e-484b-81cb-821790bd0810 HTTP/1.1" 200 -
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Input formalized. Proposing plans...
+INFO:httpx:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plans proposed. Sorting and converting to dicts...
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plans processed. Updating task state...
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Task state updated.
+INFO:root:[817a055f-439e-484b-81cb-821790bd0810] Plan generation thread finished.
