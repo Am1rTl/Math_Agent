@@ -190,6 +190,11 @@ const createProgressFeed = task => {
 	});
 
 	feed.appendChild(list);
+
+	setTimeout(() => {
+		list.scrollTop = list.scrollHeight;
+	}, 50);
+
 	return feed;
 };
 
@@ -290,21 +295,10 @@ const createAgentSteps = task => {
 	const list = document.createElement("div");
 	list.className = "agent-steps-list";
 
-	steps.forEach((step, index) => {
-		const stepNode = document.createElement("div");
+	steps.forEach((entry, index) => {
 		const status = determineStepStatus(task, index, steps.length);
-		stepNode.className = `agent-step-node ${status}`;
-		stepNode.innerHTML = `
-			<div class="step-icon"></div>
-			<div class="step-title">Шаг ${index + 1}</div>
-		`;
+		const stepNode = createExecutionStep(entry, status, index);
 		list.appendChild(stepNode);
-
-		if (index < steps.length - 1) {
-			const connector = document.createElement("div");
-			connector.className = "step-connector";
-			list.appendChild(connector);
-		}
 	});
 
 	container.appendChild(list);
@@ -323,7 +317,12 @@ const createFinalAnswerBlock = task => {
 	body.className = "final-answer-body";
 
 	if (task.final_answer) {
-		body.innerHTML = `<p>${task.final_answer.answer || "—"}</p>`;
+		const { answer, ...details } = task.final_answer;
+		const detailsHtml = renderCodeBlock(details);
+		body.innerHTML = `
+			<p>${answer || "Ответ не предоставлен."}</p>
+			${detailsHtml}
+		`;
 	} else if (task.status === "completed") {
 		body.innerHTML = `<p>Задача выполнена, но финальный ответ отсутствует.</p>`;
 	} else {
@@ -407,6 +406,11 @@ export const createTaskWindow = (task, options = {}) => {
 
 	executionContainer.append(leftPanel, rightPanel);
 
-	windowEl.append(...headerFragments, planGrid, planActions, arrow, executionContainer);
+	if (task.plans?.length > 0) {
+		windowEl.append(...headerFragments, planGrid, planActions, arrow, executionContainer);
+	} else {
+		windowEl.append(...headerFragments, planGrid, planActions);
+	}
+
 	return windowEl;
 };
