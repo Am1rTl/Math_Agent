@@ -21,7 +21,8 @@ const showToast = (message, variant = "info") => {
 const state = {
 	task: null,
 	isRunning: false,
-	errorShown: false
+	errorShown: false,
+	isCompleted: false
 };
 
 const fetchInitialTask = async () => {
@@ -75,6 +76,12 @@ const render = () => {
 	});
 
 	workspaceEl.appendChild(node);
+
+	// Auto-scroll progress feed to bottom after render
+	const progressList = node.querySelector('.progress-list');
+	if (progressList) {
+		progressList.scrollTop = progressList.scrollHeight;
+	}
 };
 
 const handleRunTask = async taskIdentifier => {
@@ -136,6 +143,7 @@ const initEventSource = () => {
 
 	eventSource.addEventListener("task_complete", event => {
 		state.task = JSON.parse(event.data);
+		state.isCompleted = true;
 		render();
 		eventSource.close();
 	});
@@ -155,6 +163,15 @@ const initControls = () => {
 	deleteButton?.addEventListener("click", handleDelete);
 };
 
+const startAutoRefresh = () => {
+	setInterval(() => {
+		if (refreshButton && !state.isCompleted) {
+			refreshButton.click();
+		}
+	}, 2000);
+};
+
 initControls();
 fetchInitialTask();
 initEventSource();
+startAutoRefresh();

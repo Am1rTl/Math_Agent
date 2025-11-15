@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Вход - DeepSeek Plan Studio</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+	<div class="background-glow"></div>
+	<div class="login-container">
+		<div class="login-card">
+			<h1>DeepSeek Plan Studio</h1>
+			<p>Войдите в систему для доступа к планированию задач</p>
+			<form id="login-form" class="login-form">
+				<div class="form-group">
+					<label for="username">Имя пользователя</label>
+					<input type="text" id="username" name="username" required>
+				</div>
+				<div class="form-group">
+					<label for="password">Пароль</label>
+					<input type="password" id="password" name="password" required>
+				</div>
+				<button type="submit" class="login-btn">Войти</button>
+			</form>
+			<div id="error-message" class="error-message"></div>
+		</div>
+	</div>
+
+	<script src="{{ url_for('static', filename='js/login.js') }}" type="module"></script>
+</body>
+</html>
