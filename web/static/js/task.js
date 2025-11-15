@@ -1,4 +1,4 @@
-import { createTaskWindow, ensurePlanSelection } from "./ui.js";
+import { appendLogEntry, createTaskWindow, ensurePlanSelection } from "./ui.js";
 
 const workspaceEl = document.getElementById("single-task-workspace");
 const emptyStateEl = document.getElementById("single-task-empty");
@@ -24,22 +24,29 @@ const state = {
 	errorShown: false
 };
 
-const fetchTask = async (silent = false) => {
+const fetchInitialTask = async () => {
 	try {
 		const response = await fetch(`/api/tasks/${taskId}`);
-		if (!response.ok) {
-			throw new Error("Не удалось загрузить задачу.");
-		}
+		if (!response.ok) throw new Error("Не удалось загрузить задачу.");
 		state.task = await response.json();
 		render();
-	} catch (error) {
-		if (!silent) {
-			showToast(error.message, "error");
-		}
+	} catch (err) {
+		showToast(err.message, "error");
 	}
 };
 
 const render = () => {
+	if (!workspaceEl || !state.task) {
+		emptyStateEl.style.display = "flex";
+		return;
+	}
+
+	const currentlyOpen = new Set();
+	workspaceEl.querySelectorAll(".step-item.open").forEach(el => {
+		const key = el.dataset.key;
+		if (key) currentlyOpen.add(key);
+	});
+
 	workspaceEl.innerHTML = "";
 	if (!state.task) {
 		emptyStateEl.style.display = "flex";
@@ -59,6 +66,12 @@ const render = () => {
 		isTaskRunning: () => state.isRunning,
 		onRunTask: handleRunTask,
 		onSelectPlan: null
+	});
+
+	node.querySelectorAll(".step-item").forEach(el => {
+		if (currentlyOpen.has(el.dataset.key)) {
+			el.classList.add("open");
+		}
 	});
 
 	workspaceEl.appendChild(node);
@@ -109,12 +122,39 @@ const handleDelete = async () => {
 	}
 };
 
+const initEventSource = () => {
+	const eventSource = new EventSource(`/api/tasks/${taskId}/stream`);
+
+	eventSource.addEventListener("log_entry", event => {
+		const logEntry = JSON.parse(event.data);
+		appendLogEntry(logEntry, workspaceEl);
+		if (state.task && !state.task.progress_log) {
+			state.task.progress_log = [];
+		}
+		state.task?.progress_log.push(logEntry);
+	});
+
+	eventSource.addEventListener("task_complete", event => {
+		state.task = JSON.parse(event.data);
+		render();
+		eventSource.close();
+	});
+
+	eventSource.onerror = () => {
+		showToast("Соединение с сервером потеряно. Попытка переподключения...", "error");
+		setTimeout(() => {
+			eventSource.close();
+			initEventSource();
+		}, 2000);
+	};
+};
+
 const initControls = () => {
 	backButton?.addEventListener("click", () => (window.location.href = "/"));
-	refreshButton?.addEventListener("click", () => fetchTask(false));
+	refreshButton?.addEventListener("click", fetchInitialTask);
 	deleteButton?.addEventListener("click", handleDelete);
 };
 
 initControls();
-fetchTask(false);
-setInterval(() => fetchTask(true), 2000);
+fetchInitialTask();
+initEventSource();
