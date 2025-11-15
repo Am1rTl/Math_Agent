@@ -82,6 +82,8 @@ const getCurrentEntry = task => {
 	return trace[trace.length - 1];
 };
 
+const planStepState = new Map();
+
 const createPlanCard = (task, plan, onSelectPlan) => {
 	const card = document.createElement("article");
 	card.className = `plan-card${task.selected_plan_id === plan.id ? " selected" : ""}`;
@@ -106,6 +108,9 @@ const createPlanCard = (task, plan, onSelectPlan) => {
 	const stepsList = document.createElement("div");
 	stepsList.className = "step-list";
 
+	const openSteps = planStepState.get(plan.id) || new Set();
+	planStepState.set(plan.id, openSteps);
+
 	(plan.steps || []).forEach((step, idx) => {
 		const stepItem = document.createElement("div");
 		stepItem.className = "step-item";
@@ -114,22 +119,77 @@ const createPlanCard = (task, plan, onSelectPlan) => {
 		const toggle = document.createElement("button");
 		toggle.className = "step-toggle";
 		const parsed = splitStep(step, idx);
-		toggle.innerHTML = `${parsed.title}<span>›</span>`;
-		toggle.addEventListener("click", e => {
-			e.stopPropagation();
-			stepItem.classList.toggle("open");
-		});
-
 		const stepBody = document.createElement("div");
 		stepBody.className = "step-body";
 		stepBody.textContent = parsed.body;
+		stepBody.style.maxHeight = "0px";
+		stepBody.style.paddingBottom = "0";
+		toggle.innerHTML = `
+			<span class="step-title">${parsed.title}</span>
+			<span class="step-chevron">›</span>
+		`;
+		const toggleBody = e => {
+			e.stopPropagation();
+			const isOpen = !stepItem.classList.contains("open");
+			setPlanStepOpenState(stepItem, stepBody, openSteps, idx, isOpen);
+		};
+		toggle.addEventListener("click", toggleBody);
+		stepItem.addEventListener("click", toggleBody);
 
 		stepItem.append(toggle, stepBody);
 		stepsList.appendChild(stepItem);
+		// Apply saved open state after DOM insertion to measure height correctly.
+		requestAnimationFrame(() => {
+			const shouldBeOpen = openSteps.has(idx);
+			if (shouldBeOpen) {
+				setPlanStepOpenState(stepItem, stepBody, openSteps, idx, true, {
+					skipSetUpdate: true,
+					instant: true
+				});
+			}
+		});
 	});
 
 	card.append(meta, summary, stepsList);
 	return card;
+};
+
+const setPlanStepOpenState = (
+	stepItem,
+	stepBody,
+	openSet,
+	idx,
+	isOpen,
+	options = {}
+) => {
+	const { skipSetUpdate = false, instant = false } = options;
+	const applyState = () => {
+		if (isOpen) {
+			stepItem.classList.add("open");
+			stepBody.style.maxHeight = `${stepBody.scrollHeight}px`;
+			stepBody.style.paddingBottom = "14px";
+			if (!skipSetUpdate) openSet.add(idx);
+		} else {
+			stepItem.classList.remove("open");
+			stepBody.style.maxHeight = "0px";
+			stepBody.style.paddingBottom = "0";
+			if (!skipSetUpdate) openSet.delete(idx);
+		}
+	};
+
+	if (instant) {
+		const previousTransition = stepBody.style.transition;
+		stepBody.style.transition = "none";
+		applyState();
+		// Force reflow to apply styles before restoring transition
+		// eslint-disable-next-line no-unused-expressions
+		stepBody.offsetHeight;
+		requestAnimationFrame(() => {
+			stepBody.style.transition = previousTransition || "";
+		});
+	} else {
+		applyState();
+	}
 };
 
 const splitStep = (text = "", index = 0) => {

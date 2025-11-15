@@ -214,14 +214,12 @@ body {
 	padding: 18px;
 	border: 1px solid transparent;
 	position: relative;
-	overflow: hidden;
 	cursor: pointer;
 	transition: border 0.2s ease, transform 0.2s ease;
 }
 
 .plan-card::after {
 	content: "";
-	position: absolute;
 	inset: -30%;
 	background: radial-gradient(circle, rgba(164, 91, 255, 0.18), transparent 60%);
 	opacity: 0;
