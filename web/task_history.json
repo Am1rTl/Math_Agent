@@ -476,5 +476,387 @@
     ],
     "is_generating": false,
     "error": null
+  },
+  {
+    "id": "a8685647-7cff-46a3-9f29-3291b1394b23",
+    "problem_text": "Рассчитай сумму чисел от 1 до 100",
+    "created_at": 1763223058.4250188,
+    "updated_at": 1763223149.3184695,
+    "status": "completed",
+    "problem_object": {
+      "id": "unique_id_1",
+      "statement": "Рассчитай сумму чисел от 1 до 100",
+      "entities": [],
+      "constraints": [],
+      "goals": [
+        {
+          "type": "find_parameter",
+          "target": "sum",
+          "condition": "sum of numbers from 1 to 100"
+        }
+      ],
+      "hypotheses": [],
+      "irrelevant": [],
+      "notes": "Extract the data, do not solve the problem."
+    },
+    "plans": [
+      {
+        "id": "plan_1",
+        "summary": "План А: Использование формулы суммы арифметической прогрессии",
+        "steps": [
+          "Шаг 1: Определить параметры арифметической прогрессии: первый член (a1), последний член (an), количество членов (n).",
+          "Шаг 2: Применить формулу суммы арифметической прогрессии: S = n * (a1 + an) / 2.",
+          "Шаг 3: Подставить значения и вычислить сумму."
+        ],
+        "estimated_complexity": "low",
+        "estimated_tooling": [
+          "Калькулятор"
+        ],
+        "heuristic_score": 0.95,
+        "rationale": "Прямое применение известной формулы."
+      },
+      {
+        "id": "plan_3",
+        "summary": "План В: Использование готовой функции/метода",
+        "steps": [
+          "Шаг 1: Найти встроенную функцию или метод, вычисляющий сумму чисел в диапазоне (например, sum() в Python).",
+          "Шаг 2: Вызвать функцию с аргументами 1 и 100.",
+          "Шаг 3: Вернуть результат."
+        ],
+        "estimated_complexity": "low",
+        "estimated_tooling": [
+          "Python",
+          "JavaScript"
+        ],
+        "heuristic_score": 0.9,
+        "rationale": "Использование оптимизированной встроенной функции."
+      },
+      {
+        "id": "plan_2",
+        "summary": "План Б: Итеративное сложение",
+        "steps": [
+          "Шаг 1: Инициализировать переменную 'sum' значением 0.",
+          "Шаг 2: Создать цикл от 1 до 100.",
+          "Шаг 3: В каждой итерации прибавлять текущее число к 'sum'.",
+          "Шаг 4: Вернуть значение 'sum'."
+        ],
+        "estimated_complexity": "medium",
+        "estimated_tooling": [
+          "Python",
+          "JavaScript"
+        ],
+        "heuristic_score": 0.85,
+        "rationale": "Простой, но менее эффективный метод."
+      }
+    ],
+    "selected_plan_id": "plan_1",
+    "result_preview": {
+      "answer": "5050.0",
+      "value": 5050.0,
+      "units": "sum"
+    },
+    "final_answer": {
+      "answer": "5050.0",
+      "value": 5050.0,
+      "units": "sum"
+    },
+    "execution_trace": [
+      {
+        "step_id": "step_0_attempt_1",
+        "thought": "Первый член (a1) равен 1, последний член (an) равен 100, количество членов (n) равно 100.",
+        "action": {
+          "type": "FINISH",
+          "payload": {
+            "answer": "a1 = 1, an = 100, n = 100",
+            "value": [
+              "a1 = 1",
+              "an = 100",
+              "n = 100"
+            ],
+            "units": "parameter_values"
+          }
+        },
+        "observation": {
+          "status": "proposing_finish",
+          "answer": {
+            "answer": "a1 = 1, an = 100, n = 100",
+            "value": [
+              "a1 = 1",
+              "an = 100",
+              "n = 100"
+            ],
+            "units": "parameter_values"
+          }
+        },
+        "timestamp": 1763223140.149746
+      },
+      {
+        "step_id": "step_1_attempt_1",
+        "thought": "Сейчас нужно применить формулу суммы арифметической прогрессии. Для этого необходимо знать a1, an и n. В данном случае a1 = 1, an = 100, n = 100.",
+        "action": {
+          "type": "ADD_STEP",
+          "payload": {
+            "step_description": "Шаг 3: Подставить значения a1=1, an=100, n=100 в формулу S = n * (a1 + an) / 2 и вычислить.",
+            "insert_after": "current"
+          }
+        },
+        "observation": {
+          "status": "step_added",
+          "new_step": "Шаг 3: Подставить значения a1=1, an=100, n=100 в формулу S = n * (a1 + an) / 2 и вычислить."
+        },
+        "timestamp": 1763223143.7362957
+      },
+      {
+        "step_id": "step_2_attempt_1",
+        "thought": "Я должен подставить значения a1=1, an=100, n=100 в формулу S = n * (a1 + an) / 2 и вычислить. Это финальный шаг, который приведет к решению задачи.",
+        "action": {
+          "type": "CALL_PYTHON",
+          "payload": {
+            "code": "a1 = 1\nan = 100\nn = 100\nS = n * (a1 + an) / 2\nprint(S)"
+          }
+        },
+        "observation": {
+          "status": "ok",
+          "output": "5050.0",
+          "stdout": "5050.0\n",
+          "stderr": "",
+          "result_value": 5050.0
+        },
+        "timestamp": 1763223145.8970153
+      },
+      {
+        "step_id": "step_3_attempt_1",
+        "thought": "Шаг 3 требует подстановки значений в формулу и вычисления суммы. Предыдущий шаг уже вычислил сумму. Поэтому, я просто возвращаю результат.",
+        "action": {
+          "type": "FINISH",
+          "payload": {
+            "answer": "5050.0",
+            "value": 5050.0,
+            "units": "sum"
+          }
+        },
+        "observation": {
+          "status": "proposing_finish",
+          "answer": {
+            "answer": "5050.0",
+            "value": 5050.0,
+            "units": "sum"
+          }
+        },
+        "timestamp": 1763223146.087784
+      }
+    ],
+    "formal_trace": [
+      {
+        "step_id": "step_0_attempt_1",
+        "formal_statement": "a1 == 1 and an == 100 and n == 100",
+        "verification_status": "OK",
+        "evidence": [
+          {
+            "tool": "observation",
+            "result": "a1 = 1, an = 100, n = 100"
+          }
+        ],
+        "confidence": 1.0
+      },
+      {
+        "step_id": "step_2_attempt_1",
+        "formal_statement": "S == n * (a1 + an) / 2",
+        "verification_status": "OK",
+        "evidence": [
+          {
+            "tool": "Python",
+            "result": "5050.0"
+          }
+        ],
+        "confidence": 1.0
+      },
+      {
+        "step_id": "step_3_attempt_1",
+        "formal_statement": "sum == 5050.0",
+        "verification_status": "OK",
+        "evidence": [
+          {
+            "tool": "observation",
+            "result": "5050.0"
+          }
+        ],
+        "confidence": 1.0
+      }
+    ],
+    "progress_log": [
+      {
+        "type": "run_start",
+        "message": "Запуск выполнения плана plan_1",
+        "timestamp": 1763223137.4052086
+      },
+      {
+        "type": "start",
+        "message": "=== НАЧАЛО РЕШЕНИЯ ЗАДАЧИ ===",
+        "timestamp": 1763223137.4080808
+      },
+      {
+        "type": "start",
+        "message": "Задача: Рассчитай сумму чисел от 1 до 100",
+        "timestamp": 1763223137.4090683
+      },
+      {
+        "type": "stage",
+        "message": "\n1. ФОРМАЛИЗАЦИЯ ВХОДА...",
+        "timestamp": 1763223137.4097226
+      },
+      {
+        "type": "stage",
+        "message": "ProblemObject создан: unique_id_1",
+        "timestamp": 1763223137.4103754
+      },
+      {
+        "type": "stage",
+        "message": "\n2. ГЕНЕРАЦИЯ ПЛАНОВ...",
+        "timestamp": 1763223137.4109411
+      },
+      {
+        "type": "log",
+        "message": "Сгенерировано планов: 3",
+        "timestamp": 1763223137.4115598
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 1: План А: Использование формулы суммы арифметической прогрессии (оценка: 0.95)",
+        "timestamp": 1763223137.4121513
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 2: План В: Использование готовой функции/метода (оценка: 0.9)",
+        "timestamp": 1763223137.4127734
+      },
+      {
+        "type": "plan_preview",
+        "message": "  План 3: План Б: Итеративное сложение (оценка: 0.85)",
+        "timestamp": 1763223137.413391
+      },
+      {
+        "type": "plan_start",
+        "message": "\n3. ВЫПОЛНЕНИЕ ПЛАНА 1: plan_1",
+        "timestamp": 1763223137.4168525
+      },
+      {
+        "type": "plan_strategy",
+        "message": "   Стратегия: План А: Использование формулы суммы арифметической прогрессии",
+        "timestamp": 1763223137.4173584
+      },
+      {
+        "type": "step_start",
+        "message": "\n   Шаг 1: Шаг 1: Определить параметры арифметической прогрессии: первый член (a1), последний член (an), количество членов (n).",
+        "timestamp": 1763223137.4177773
+      },
+      {
+        "type": "thought",
+        "message": "   Мысль: Первый член (a1) равен 1, последний член (an) равен 100, количество членов (n) равно 100.",
+        "timestamp": 1763223140.1497655
+      },
+      {
+        "type": "action",
+        "message": "   Действие: FINISH",
+        "timestamp": 1763223140.1503403
+      },
+      {
+        "type": "final_proposal",
+        "message": "   Агент предложил финальный ответ. Запуск верификации...",
+        "timestamp": 1763223140.1525097
+      },
+      {
+        "type": "final_reject",
+        "message": "   Финальный ответ ОТКЛОНЕН: Предложенный ответ предоставил только значения параметров, но не рассчитал сумму чисел от 1 до 100.",
+        "timestamp": 1763223141.6867695
+      },
+      {
+        "type": "plan_update",
+        "message": "   Добавление 3 новых шагов в план...",
+        "timestamp": 1763223141.6874392
+      },
+      {
+        "type": "step_start",
+        "message": "\n   Шаг 2: Шаг 2: Применить формулу суммы арифметической прогрессии: S = n * (a1 + an) / 2.",
+        "timestamp": 1763223141.6896636
+      },
+      {
+        "type": "thought",
+        "message": "   Мысль: Сейчас нужно применить формулу суммы арифметической прогрессии. Для этого необходимо знать a1, an и n. В данном случае a1 = 1, an = 100, n = 100.",
+        "timestamp": 1763223143.7363198
+      },
+      {
+        "type": "action",
+        "message": "   Действие: ADD_STEP",
+        "timestamp": 1763223143.7369604
+      },
+      {
+        "type": "step_start",
+        "message": "\n   Шаг 3: Шаг 3: Подставить значения a1=1, an=100, n=100 в формулу S = n * (a1 + an) / 2 и вычислить.",
+        "timestamp": 1763223143.7392511
+      },
+      {
+        "type": "thought",
+        "message": "   Мысль: Я должен подставить значения a1=1, an=100, n=100 в формулу S = n * (a1 + an) / 2 и вычислить. Это финальный шаг, который приведет к решению задачи.",
+        "timestamp": 1763223145.8970413
+      },
+      {
+        "type": "action",
+        "message": "   Действие: CALL_PYTHON",
+        "timestamp": 1763223145.897905
+      },
+      {
+        "type": "action_result",
+        "message": "   Результат: ok",
+        "timestamp": 1763223145.9006448
+      },
+      {
+        "type": "tool_output",
+        "message": "   ВЫВОД КОДА/ИНСТРУМЕНТА:\n5050.0",
+        "timestamp": 1763223145.901495
+      },
+      {
+        "type": "step_start",
+        "message": "\n   Шаг 4: Шаг 3: Подставить значения и вычислить сумму.",
+        "timestamp": 1763223145.9021578
+      },
+      {
+        "type": "thought",
+        "message": "   Мысль: Шаг 3 требует подстановки значений в формулу и вычисления суммы. Предыдущий шаг уже вычислил сумму. Поэтому, я просто возвращаю результат.",
+        "timestamp": 1763223146.0878067
+      },
+      {
+        "type": "action",
+        "message": "   Действие: FINISH",
+        "timestamp": 1763223146.0887148
+      },
+      {
+        "type": "final_proposal",
+        "message": "   Агент предложил финальный ответ. Запуск верификации...",
+        "timestamp": 1763223146.0912488
+      },
+      {
+        "type": "final_accept",
+        "message": "   Финальный ответ ПОДТВЕРЖДЕН: Агент правильно вычислил сумму чисел от 1 до 100, используя формулу суммы арифметической прогрессии.",
+        "timestamp": 1763223146.9041152
+      },
+      {
+        "type": "log",
+        "message": "\n4. ВЕРИФИКАЦИЯ...",
+        "timestamp": 1763223146.9046774
+      },
+      {
+        "type": "log",
+        "message": "\n=== РЕШЕНИЕ ЗАВЕРШЕНО ===",
+        "timestamp": 1763223149.3155215
+      },
+      {
+        "type": "run_complete",
+        "message": "Выполнение задачи завершено.",
+        "timestamp": 1763223149.3184683
+      }
+    ],
+    "is_generating": false,
+    "error": null
   }
 ]

@@ -318,6 +318,7 @@ const createExecutionStep = (entry, status, index) => {
 	const body = document.createElement("div");
 	body.className = "step-body";
 	body.innerHTML = `
+	<p><strong>Мысль:</strong> ${entry.thought || "—"}</p>
 		<p><strong>Действие:</strong> ${entry.action ? entry.action.type : "—"}</p>
 		${renderCodeBlock(entry.action?.payload)}
 		<p><strong>Наблюдение:</strong></p>
