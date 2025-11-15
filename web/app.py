@@ -23,7 +23,7 @@ if "-d" in sys.argv:
 	enable_debug_logging()
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
-app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
+app.config['SECRET_KEY'] = 'your-secret-key-here-123qweasdzxcsdkfmlskdflk'  # Change this in production
 task_manager = TaskManager(Path(__file__).with_name("task_history.json"))
 
 
