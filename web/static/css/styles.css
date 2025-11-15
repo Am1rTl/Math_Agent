@@ -336,7 +336,6 @@ body {
 }
 
 .step-item.open .step-body {
-	max-height: 160px;
 	padding-bottom: 14px;
 }
 
