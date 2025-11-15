@@ -2,7 +2,9 @@ import os
 import sys
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+import json
+import time
+from flask import Flask, Response, jsonify, render_template, request
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parent
@@ -34,6 +36,34 @@ def task_view(task_id: str):
 @app.route("/api/tasks", methods=["GET"])
 def list_tasks():
 	return jsonify(task_manager.list_tasks())
+
+
+@app.route("/api/tasks/<task_id>/stream")
+def stream_task(task_id: str):
+	def event_stream():
+		last_log_count = 0
+		while True:
+			task = task_manager.get_task(task_id)
+			if not task:
+				break
+
+			# Stream new log entries
+			logs = task.get("progress_log", [])
+			if len(logs) > last_log_count:
+				for i in range(last_log_count, len(logs)):
+					yield f"event: log_entry\ndata: {json.dumps(logs[i])}\n\n"
+				last_log_count = len(logs)
+
+			# Send a heartbeat to keep the connection alive
+			yield "event: heartbeat\ndata: \n\n"
+
+			if task.get("status") in ("completed", "failed"):
+				yield f"event: task_complete\ndata: {json.dumps(task)}\n\n"
+				break
+
+			time.sleep(0.5)
+
+	return Response(event_stream(), mimetype="text/event-stream")
 
 
 @app.route("/api/tasks/<task_id>", methods=["GET"])
