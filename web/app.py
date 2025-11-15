@@ -54,7 +54,7 @@ def api_login():
 	username = payload.get("username")
 	password = payload.get("password")
 
-	if username == "admin" and password == "admin":
+	if username == "admin" and password == "admin123$$$":
 		token = jwt.encode({
 			'user': username,
 			'exp': datetime.utcnow() + timedelta(hours=24)
