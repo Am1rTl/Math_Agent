@@ -142,12 +142,12 @@ const splitStep = (text = "", index = 0) => {
 };
 
 const createTimeline = task => {
-	const timeline = document.createElement("div");
+	const timeline = document.createElement("ul");
 	timeline.className = "timeline";
 
 	const entries = task.execution_trace || [];
 	if (!entries.length) {
-		const placeholder = document.createElement("article");
+		const placeholder = document.createElement("li");
 		placeholder.className = "timeline-item";
 		placeholder.innerHTML = `
 			<h4>Ещё нет действий</h4>
@@ -158,7 +158,7 @@ const createTimeline = task => {
 	}
 
 	entries.forEach(entry => {
-		const item = document.createElement("article");
+		const item = document.createElement("li");
 		item.className = "timeline-item";
 		item.innerHTML = `
 			<h4>${entry.step_id}</h4>

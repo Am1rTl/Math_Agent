@@ -386,7 +386,7 @@ body {
 }
 
 .timeline {
-	display: flex;
+	display: none;
 	flex-direction: column;
 	gap: 12px;
 }
