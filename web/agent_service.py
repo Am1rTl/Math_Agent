@@ -82,6 +82,14 @@ class TaskManager:
 				)
 				thread.start()
 				self._plan_threads[task_id] = thread
+			
+			# Также возобновляем "зависшие" запущенные задачи
+			# (Хотя в данном случае поток будет потерян, 
+			# но для простоты мы просто сбросим статус)
+			if task.get("status") == "running":
+				task["status"] = "failed"
+				task["error"] = "Выполнение было прервано перезапуском сервера."
+
 
 	def _public_view(self, task: Dict[str, Any]) -> Dict[str, Any]:
 		public = {
@@ -105,6 +113,7 @@ class TaskManager:
 		}
 		public["problem_object"] = task.get("problem_object") or {}
 		public["progress_log"] = public.get("progress_log") or []
+		public["execution_trace"] = public.get("execution_trace") or []
 		return public
 
 	def list_tasks(self) -> List[Dict[str, Any]]:
@@ -164,56 +173,47 @@ class TaskManager:
 
 			if not task.get("plans") or not task.get("problem_object"):
 				raise ValueError("Планы ещё формируются. Подождите немного и попробуйте снова.")
+			
+			if task_id in self._execution_threads:
+				raise ValueError("Задача уже выполняется.")
 
 		best_plan_id = self._choose_best_plan(task)
 		if best_plan_id is None:
 			raise ValueError("Нет доступных планов для выполнения.")
-		plan_id = best_plan_id
+		
+		selected_plan_id = plan_id or best_plan_id
 
 		with self._lock:
-			task["selected_plan_id"] = plan_id
+			task["selected_plan_id"] = selected_plan_id
 			task["status"] = "running"
 			task["updated_at"] = time.time()
+			# Очищаем логи и трассировку от предыдущих запусков
+			task["execution_trace"] = [] 
+			task["formal_trace"] = []
+			task["final_answer"] = None
+			task["progress_log"] = []
+			task["error"] = None
 			self._persist()
 
 		self._append_progress(task_id, {
 			"type": "run_start",
-			"message": f"Запуск выполнения плана {plan_id}"
+			"message": f"Запуск выполнения плана {selected_plan_id}"
 		})
 
-		def progress_callback(event: Dict[str, Any]):
-			self._append_progress(task_id, event)
+		# Запускаем выполнение в отдельном потоке
+		thread = threading.Thread(
+			target=self._run_task_async,
+			args=(task_id, selected_plan_id, wolfram_key),
+			daemon=True
+		)
+		thread.start()
+		
+		with self._lock:
+			self._execution_threads[task_id] = thread
+			public_task = self._public_view(task)
 
-		try:
-			result = self._execute_with_plan(task, plan_id, wolfram_key, progress_callback)
-		except Exception as exc:
-			with self._lock:
-				task["status"] = "failed"
-				task["result_preview"] = {"answer": f"Ошибка выполнения: {exc}"}
-				task["updated_at"] = time.time()
-				self._persist()
-			self._append_progress(task_id, {
-				"type": "run_error",
-				"message": f"Ошибка выполнения: {exc}"
-			})
-			raise
-	
-			with self._lock:
-				task["status"] = "completed" if result.get("final_answer") else "failed"
-				task["result_preview"] = result.get("final_answer")
-				task["final_answer"] = result.get("final_answer")
-				task["execution_trace"] = result.get("execution_trace", [])
-				task["formal_trace"] = result.get("formal_trace", [])
-				task["updated_at"] = time.time()
-				self._persist()
-				public_task = self._public_view(task)
-	
-			self._append_progress(task_id, {
-				"type": "run_complete",
-				"message": "Выполнение задачи завершено."
-			})
-	
-			return {"task": public_task, "result": result}
+		# Немедленно возвращаем задачу в статусе "running"
+		return {"task": public_task, "result": {"status": "started"}}
 
 	def delete_task(self, task_id: str) -> None:
 		with self._lock:
@@ -278,7 +278,8 @@ class TaskManager:
 		task: Dict[str, Any],
 		plan_id: str,
 		wolfram_api_key: Optional[str],
-		progress_callback=None
+		progress_callback=None,
+		execution_callback=None # <-- Добавлено
 	) -> Dict[str, Any]:
 		ordered_plans = self._reorder_plans(task["plans"], plan_id)
 		plan_objects = [Plan(**plan) for plan in ordered_plans]
@@ -297,8 +298,75 @@ class TaskManager:
 			return self.agent.solve_problem(
 				problem_text=task["problem_text"],
 				wolfram_api_key=wolfram_api_key,
-				progress_callback=progress_callback
+				progress_callback=progress_callback,
+				execution_callback=execution_callback # <-- Передано
 			)
+
+	# +++ НОВЫЙ МЕТОД: Цель для потока выполнения +++
+	def _run_task_async(self, task_id: str, plan_id: str, wolfram_key: Optional[str]):
+		task = None
+		with self._lock:
+			task = self._tasks.get(task_id)
+			if not task:
+				return 
+
+		def progress_callback(event: Dict[str, Any]):
+			self._append_progress(task_id, event)
+		
+		# +++ НОВЫЙ CALLBACK: Для 'execution_trace' +++
+		def execution_callback(trace_entry: Dict[str, Any]):
+			self._append_execution_trace(task_id, trace_entry)
+
+		try:
+			# Это блокирующая операция
+			result = self._execute_with_plan(
+				task, 
+				plan_id, 
+				wolfram_key, 
+				progress_callback,
+				execution_callback # <-- Передаем новый callback
+			)
+			
+			# Как только выполнение завершено, обновляем финальный статус
+			with self._lock:
+				task = self._tasks.get(task_id) # Получаем свежую версию
+				if not task:
+					return 
+				
+				task["status"] = "completed" if result.get("final_answer") else "failed"
+				task["result_preview"] = result.get("final_answer")
+				task["final_answer"] = result.get("final_answer")
+				# Синхронизируем с финальной версией трассировки
+				task["execution_trace"] = result.get("execution_trace", []) 
+				task["formal_trace"] = result.get("formal_trace", [])
+				task["updated_at"] = time.time()
+				self._persist()
+
+			self._append_progress(task_id, {
+				"type": "run_complete",
+				"message": "Выполнение задачи завершено."
+			})
+
+		except Exception as exc:
+			# В случае ошибки во время выполнения
+			with self._lock:
+				task = self._tasks.get(task_id)
+				if not task:
+					return
+				task["status"] = "failed"
+				task["result_preview"] = {"answer": f"Ошибка выполнения: {exc}"}
+				task["error"] = str(exc)
+				task["updated_at"] = time.time()
+				self._persist()
+			
+			self._append_progress(task_id, {
+				"type": "run_error",
+				"message": f"Ошибка выполнения: {exc}"
+			})
+		finally:
+			# Убираем поток из списка активных
+			with self._lock:
+				self._execution_threads.pop(task_id, None)
 
 	@staticmethod
 	def _reorder_plans(plans: List[Dict[str, Any]], plan_id: str) -> List[Dict[str, Any]]:
@@ -324,6 +392,21 @@ class TaskManager:
 				return
 			progress_log = task.setdefault("progress_log", [])
 			progress_log.append(event)
+			task["updated_at"] = time.time()
+			self._persist()
+
+	# +++ НОВЫЙ МЕТОД: Сохранение шагов 'execution_trace' +++
+	def _append_execution_trace(self, task_id: str, trace_entry: Dict[str, Any]) -> None:
+		if not trace_entry:
+			return
+		with self._lock:
+			task = self._tasks.get(task_id)
+			if not task:
+				return
+			trace_log = task.setdefault("execution_trace", [])
+			
+			# Простой append, т.к. каждый шаг уникален
+			trace_log.append(trace_entry)
 			task["updated_at"] = time.time()
 			self._persist()
 
