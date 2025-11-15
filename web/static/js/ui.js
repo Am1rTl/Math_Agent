@@ -158,15 +158,19 @@ const createTimeline = task => {
 	}
 
 	entries.forEach(entry => {
-		const item = document.createElement("li");
-		item.className = "timeline-item";
-		item.innerHTML = `
-			<h4>${entry.step_id}</h4>
-			<p><strong>Мысль:</strong> ${entry.thought || "—"}</p>
-			<p><strong>Действие:</strong> ${entry.action ? entry.action.type : "—"}</p>
-			<p><strong>Наблюдение:</strong> ${formatObservation(entry.observation)}</p>
-		`;
-		timeline.appendChild(item);
+		const actionText = entry.action ? entry.action.type : "—";
+		const observationText = formatObservation(entry.observation);
+		if (actionText !== "—" && observationText !== "—") {
+			const item = document.createElement("li");
+			item.className = "timeline-item";
+			item.innerHTML = `
+				<h4>${entry.step_id}</h4>
+				<p><strong>Мысль:</strong> ${entry.thought || "—"}</p>
+				<p><strong>Действие:</strong> ${actionText}</p>
+				<p><strong>Наблюдение:</strong> ${observationText}</p>
+			`;
+			timeline.appendChild(item);
+		}
 	});
 
 	return timeline;
@@ -279,11 +283,25 @@ const createExecutionPanel = task => {
 		panel.appendChild(placeholder);
 	} else {
 		trace.forEach((entry, index) => {
-			const status = determineStepStatus(task, index, trace.length);
-			list.appendChild(createExecutionStep(entry, status, index));
+			const actionText = entry.action ? entry.action.type : "—";
+			const observationText = formatObservation(entry.observation);
+			if (actionText !== "—" && observationText !== "—") {
+				const status = determineStepStatus(task, index, trace.length);
+				list.appendChild(createExecutionStep(entry, status, index));
+			}
 		});
 
-		panel.appendChild(list);
+		if (list.children.length > 0) {
+			panel.appendChild(list);
+		} else {
+			const placeholder = document.createElement("article");
+			placeholder.className = "timeline-item";
+			placeholder.innerHTML = `
+				<h4>Ещё нет действий</h4>
+				<p>Запусти план, чтобы увидеть пошаговую картину: мысли, инструменты и выводы.</p>
+			`;
+			panel.appendChild(placeholder);
+		}
 	}
 
 	return panel;
