@@ -817,6 +817,18 @@ body {
 	overflow-x: auto;
 }
 
+.step-item.execution .step-toggle {
+	transition: background-color 0.2s ease-in-out;
+}
+
+.step-item.execution:hover .step-toggle {
+	background-color: rgba(255, 255, 255, 0.05);
+}
+
+.step-item.execution.open .step-toggle {
+	background-color: rgba(255, 255, 255, 0.08);
+}
+
 .execution-panel pre {
 	color: var(--text-primary);
 	font-size: 0.85rem;
