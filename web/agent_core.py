@@ -20,6 +20,22 @@ import wolframalpha # <-- ДОБАВЛЕНО
 DEBUG_MODE = False
 LOG_FILE = "math_agent.log"
 
+
+def enable_debug_logging() -> None:
+	"""Turn on verbose logging of every model call/response."""
+	global DEBUG_MODE
+	if DEBUG_MODE:
+		return
+
+	DEBUG_MODE = True
+	print("--- DEBUG MODE ENABLED: Logging raw AI traffic to math_agent.log ---")
+	try:
+		with open(LOG_FILE, "w", encoding="utf-8") as log_file:
+			log_file.write(f"--- Log started at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n\n")
+	except OSError as exc:
+		# Fail silently but keep the process running.
+		print(f"[warn] Could not initialize debug log file: {exc}")
+
 # ========== КОНФИГУРАЦИЯ OPENROUTER ==========
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 #DEFAULT_MODEL = "microsoft/phi-4-multimodal-instruct"
@@ -1424,13 +1440,8 @@ class MATHAGENTVL:
 # ========== ПРИМЕР ИСПОЛЬЗОВАНИЯ ==========
 def main():
 	# ========== ИЗМЕНЕНИЕ 9: Активация DEBUG_MODE ==========
-	global DEBUG_MODE
 	if "-d" in sys.argv:
-		DEBUG_MODE = True
-		print("--- DEBUG MODE ENABLED: Logging raw AI output to math_agent.log ---")
-		# Очищаем лог-файл при старте
-		with open(LOG_FILE, "w") as f:
-			f.write(f"--- Log started at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n\n")
+		enable_debug_logging()
 
 	agent = MATHAGENTVL()
 	

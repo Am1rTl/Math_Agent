@@ -16,7 +16,11 @@ if str(PROJECT_ROOT) not in sys.path:
 	sys.path.insert(0, str(PROJECT_ROOT))
 
 from web.agent_service import TaskManager
+from web.agent_core import enable_debug_logging
 
+
+if "-d" in sys.argv:
+	enable_debug_logging()
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
@@ -167,4 +171,4 @@ def run_task(task_id: str):
 
 
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
+	app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5051)))
