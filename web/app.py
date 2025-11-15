@@ -2,7 +2,9 @@ import os
 import sys
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+import json
+import time
+from flask import Flask, Response, jsonify, render_template, request
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parent
@@ -34,6 +36,28 @@ def task_view(task_id: str):
 @app.route("/api/tasks", methods=["GET"])
 def list_tasks():
 	return jsonify(task_manager.list_tasks())
+
+
+@app.route("/api/tasks/<task_id>/stream")
+def stream_task(task_id: str):
+	def event_stream():
+		last_hash = None
+		while True:
+			task = task_manager.get_task(task_id)
+			if not task:
+				break
+
+			task_hash = hash(json.dumps(task, sort_keys=True))
+			if task_hash != last_hash:
+				yield f"data: {json.dumps(task)}\n\n"
+				last_hash = task_hash
+
+			if task.get("status") in ("completed", "failed"):
+				break
+
+			time.sleep(1)
+
+	return Response(event_stream(), mimetype="text/event-stream")
 
 
 @app.route("/api/tasks/<task_id>", methods=["GET"])

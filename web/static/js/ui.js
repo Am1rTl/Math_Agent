@@ -109,6 +109,7 @@ const createPlanCard = (task, plan, onSelectPlan) => {
 	(plan.steps || []).forEach((step, idx) => {
 		const stepItem = document.createElement("div");
 		stepItem.className = "step-item";
+		stepItem.dataset.key = `plan-${plan.id}-step-${idx}`;
 
 		const toggle = document.createElement("button");
 		toggle.className = "step-toggle";
@@ -286,7 +287,8 @@ const determineStepStatus = (task, index, total) => {
 
 const createExecutionStep = (entry, status, index) => {
 	const item = document.createElement("div");
-	item.className = `step-item execution ${status} open`;
+	item.className = `step-item execution ${status}`;
+	item.dataset.key = `execution-step-${index}`;
 
 	const toggle = document.createElement("button");
 	toggle.className = "step-toggle";
