@@ -340,7 +340,7 @@ body {
 	padding-bottom: 14px;
 }
 
-.step-item.open .step-toggle span {
+.step-item.open .step-toggle .step-chevron {
 	transform: rotate(90deg);
 }
 

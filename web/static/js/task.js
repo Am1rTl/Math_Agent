@@ -1,4 +1,4 @@
-import { createTaskWindow, ensurePlanSelection } from "./ui.js";
+import { appendLogEntry, createTaskWindow, ensurePlanSelection } from "./ui.js";
 
 const workspaceEl = document.getElementById("single-task-workspace");
 const emptyStateEl = document.getElementById("single-task-empty");
@@ -124,10 +124,22 @@ const handleDelete = async () => {
 
 const initEventSource = () => {
 	const eventSource = new EventSource(`/api/tasks/${taskId}/stream`);
-	eventSource.onmessage = event => {
+
+	eventSource.addEventListener("log_entry", event => {
+		const logEntry = JSON.parse(event.data);
+		appendLogEntry(logEntry, workspaceEl);
+		if (state.task && !state.task.progress_log) {
+			state.task.progress_log = [];
+		}
+		state.task?.progress_log.push(logEntry);
+	});
+
+	eventSource.addEventListener("task_complete", event => {
 		state.task = JSON.parse(event.data);
 		render();
-	};
+		eventSource.close();
+	});
+
 	eventSource.onerror = () => {
 		showToast("Соединение с сервером потеряно. Попытка переподключения...", "error");
 		setTimeout(() => {

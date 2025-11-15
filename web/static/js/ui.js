@@ -204,34 +204,45 @@ const createProgressFeed = task => {
 
 	const list = document.createElement("div");
 	list.className = "progress-list";
-
-	logs.forEach(event => {
-		const entry = document.createElement("div");
-		entry.className = `progress-entry ${event.type || "log"}`;
-
-		const meta = document.createElement("div");
-		meta.className = "progress-meta";
-
-		const time = document.createElement("span");
-		time.className = "progress-time";
-		time.textContent = formatTimestamp(event.timestamp);
-
-		const type = document.createElement("span");
-		type.className = "progress-type";
-		type.textContent = event.type || "log";
-
-		meta.append(time, type);
-
-		const body = document.createElement("pre");
-		body.className = "progress-message";
-		body.textContent = event.message || "";
-
-		entry.append(meta, body);
-		list.appendChild(entry);
-	});
+	logs.forEach(event => list.appendChild(createLogEntry(event)));
 
 	feed.appendChild(list);
 	return feed;
+};
+
+export const appendLogEntry = (event, container) => {
+	const list = container.querySelector(".progress-list");
+	if (list) {
+		const placeholder = list.querySelector(".timeline-item");
+		if (placeholder) placeholder.remove();
+		list.appendChild(createLogEntry(event));
+		list.scrollTop = list.scrollHeight;
+	}
+};
+
+const createLogEntry = event => {
+	const entry = document.createElement("div");
+	entry.className = `progress-entry ${event.type || "log"}`;
+
+	const meta = document.createElement("div");
+	meta.className = "progress-meta";
+
+	const time = document.createElement("span");
+	time.className = "progress-time";
+	time.textContent = formatTimestamp(event.timestamp);
+
+	const type = document.createElement("span");
+	type.className = "progress-type";
+	type.textContent = event.type || "log";
+
+	meta.append(time, type);
+
+	const body = document.createElement("pre");
+	body.className = "progress-message";
+	body.textContent = event.message || "";
+
+	entry.append(meta, body);
+	return entry;
 };
 
 const formatObservation = observation => {

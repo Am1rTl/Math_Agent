@@ -41,21 +41,27 @@ def list_tasks():
 @app.route("/api/tasks/<task_id>/stream")
 def stream_task(task_id: str):
 	def event_stream():
-		last_hash = None
+		last_log_count = 0
 		while True:
 			task = task_manager.get_task(task_id)
 			if not task:
 				break
 
-			task_hash = hash(json.dumps(task, sort_keys=True))
-			if task_hash != last_hash:
-				yield f"data: {json.dumps(task)}\n\n"
-				last_hash = task_hash
+			# Stream new log entries
+			logs = task.get("progress_log", [])
+			if len(logs) > last_log_count:
+				for i in range(last_log_count, len(logs)):
+					yield f"event: log_entry\ndata: {json.dumps(logs[i])}\n\n"
+				last_log_count = len(logs)
+
+			# Send a heartbeat to keep the connection alive
+			yield "event: heartbeat\ndata: \n\n"
 
 			if task.get("status") in ("completed", "failed"):
+				yield f"event: task_complete\ndata: {json.dumps(task)}\n\n"
 				break
 
-			time.sleep(1)
+			time.sleep(0.5)
 
 	return Response(event_stream(), mimetype="text/event-stream")
 
