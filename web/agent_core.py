@@ -42,7 +42,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "sk-or-v1-124aa7cfa349934a2
 #DEFAULT_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
 #DEFAULT_MODEL = "qwen/qwen3-32b"
 #DEFAULT_MODEL = "google/gemini-2.0-flash-lite-001"
-DEFAULT_MODEL = "google/gemini-2.5-pro"
+DEFAULT_MODEL = "google/gemini-3-flash-preview"
 #DEFAULT_MODEL = "openai/gpt-5-mini"
 #DEFAULT_MODEL = "openai/o3"
 

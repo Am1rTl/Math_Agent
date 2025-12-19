@@ -38,12 +38,31 @@ class TaskManager:
 		with self.history_path.open("r", encoding="utf-8") as fh:
 			try:
 				data = json.load(fh)
-				for task in data:
-					self._tasks[task["id"]] = task
+				tasks_data = []
+				if isinstance(data, list):
+					tasks_data = data
+				elif isinstance(data, dict):
+					# Handle categorized or wrapped tasks
+					for val in data.values():
+						if isinstance(val, list):
+							tasks_data.extend(val)
+						elif isinstance(val, dict) and "id" in val:
+							tasks_data.append(val)
+				else:
+					print(f"Warning: Unexpected history format in {self.history_path}")
+					return
+
+				for task in tasks_data:
+					if isinstance(task, dict) and "id" in task:
+						self._tasks[task["id"]] = task
+				
 				self._resume_pending_generations()
-			except json.JSONDecodeError:
-				# Corrupted history shouldn't block the service; start fresh.
-				self._tasks = {}
+				
+			except Exception as exc:
+				print(f"Error loading history from {self.history_path}: {exc}")
+				# Don't let corrupted history crash the whole service
+				if not self._tasks:
+					self._tasks = {}
 
 	def _persist(self) -> None:
 		with self.history_path.open("w", encoding="utf-8") as fh:
@@ -120,7 +139,7 @@ class TaskManager:
 		with self._lock:
 			return sorted(
 				[self._public_view(task) for task in self._tasks.values()],
-				key=lambda item: item.get("created_at", 0),
+				key=lambda item: item.get("created_at") or 0,
 				reverse=True
 			)
 
