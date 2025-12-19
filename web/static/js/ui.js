@@ -245,14 +245,29 @@ const createFinalAnswerBlock = task => {
 	return block;
 };
 
-const createProgressFeed = task => {
+const createProgressFeed = (task, collapsed = false) => {
 	const feed = document.createElement("section");
-	feed.className = "progress-feed";
-	feed.innerHTML = `
-		<div class="panel-header">
-			<h3>Консоль агента</h3>
-		</div>
-	`;
+	feed.className = `progress-feed ${collapsed ? "collapsed" : ""}`.trim();
+
+	const header = document.createElement("div");
+	header.className = "panel-header";
+	header.style.cursor = "pointer";
+
+	const title = document.createElement("h3");
+	title.textContent = "Консоль агента";
+
+	const toggleBtn = document.createElement("button");
+	toggleBtn.className = "panel-toggle-btn";
+	toggleBtn.innerHTML = collapsed ? "▼" : "▲";
+
+	header.append(title, toggleBtn);
+
+	header.addEventListener("click", () => {
+		const isCollapsed = feed.classList.toggle("collapsed");
+		toggleBtn.innerHTML = isCollapsed ? "▼" : "▲";
+	});
+
+	feed.appendChild(header);
 
 	const logs = (task.progress_log || []).slice(-200);
 	if (!logs.length) {
@@ -334,10 +349,9 @@ const createExecutionPanel = task => {
 		placeholder.className = "timeline-item";
 		placeholder.innerHTML = `
 			<h4>${task.status === "running" ? "Агент начал работу" : "Ещё нет действий"}</h4>
-			<p>${
-				task.status === "running"
-					? "Следи за прогрессом: как только появятся новые мысли, они сразу отобразятся ниже."
-					: "Запусти план, чтобы увидеть пошаговую картину: мысли, инструменты и выводы."
+			<p>${task.status === "running"
+				? "Следи за прогрессом: как только появятся новые мысли, они сразу отобразятся ниже."
+				: "Запусти план, чтобы увидеть пошаговую картину: мысли, инструменты и выводы."
 			}</p>
 		`;
 		panel.appendChild(placeholder);
@@ -440,7 +454,7 @@ export const ensurePlanSelection = task => {
 };
 
 export const createTaskWindow = (task, options = {}) => {
-	const { onRunTask, onSelectPlan, isTaskRunning } = options;
+	const { onRunTask, onSelectPlan, isTaskRunning, collapseConsole = false, showConsole = true } = options;
 	const windowEl = document.createElement("section");
 	windowEl.className = `task-window${task.selected_plan_id ? " plan-selected" : ""}`;
 	windowEl.id = `task-${task.id}`;
@@ -499,20 +513,24 @@ export const createTaskWindow = (task, options = {}) => {
 		planActions.append(createLoader());
 	}
 
-	const progressFeed = createProgressFeed(task);
+	const progressFeed = createProgressFeed(task, collapseConsole);
 	const executionPanel = createExecutionPanel(task);
 	const timeline = createTimeline(task);
 	const finalAnswer = createFinalAnswerBlock(task);
 
-	windowEl.append(
+	const contents = [
 		...headerFragments,
 		planGrid,
 		planActions,
-		arrow,
-		progressFeed,
-		executionPanel,
-		timeline,
-		finalAnswer
-	);
+		arrow
+	];
+
+	if (showConsole) {
+		contents.push(progressFeed);
+	}
+
+	contents.push(executionPanel, timeline, finalAnswer);
+
+	windowEl.append(...contents);
 	return windowEl;
 };

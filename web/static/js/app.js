@@ -99,7 +99,8 @@ const renderWorkspace = () => {
 		const windowNode = createTaskWindow(task, {
 			isTaskRunning: id => state.loadingTasks.has(id),
 			onRunTask: runTask,
-			onSelectPlan: null
+			onSelectPlan: null,
+			showConsole: false
 		});
 		workspaceEl.appendChild(windowNode);
 	});
