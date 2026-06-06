@@ -18,7 +18,7 @@ import wolframalpha # <-- ДОБАВЛЕНО
 
 # ========== ИЗМЕНЕНИЕ 1: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ОТЛАДКИ ==========
 DEBUG_MODE = False
-LOG_FILE = "math_agent.log"
+LOG_FILE = "logs/math_agent.log"
 
 
 def enable_debug_logging() -> None:
@@ -1453,7 +1453,7 @@ def main():
 		wolfram_api_key=os.getenv("WOLFRAM_API_KEY", "ERP3K8L5L3")
 	)
 	
-	with open("math_agent_result.json", "w", encoding="utf-8") as f:
+	with open("results/math_agent_result.json", "w", encoding="utf-8") as f:
 		json.dump(result, f, ensure_ascii=False, indent=2, default=str)
 	
 	print("Результат сохранен в math_agent_result.json")

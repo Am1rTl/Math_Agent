@@ -18,7 +18,7 @@ import wolframalpha # <-- ДОБАВЛЕНО
 
 # ========== ИЗМЕНЕНИЕ 1: ГЛОБАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ОТЛАДКИ ==========
 DEBUG_MODE = False
-LOG_FILE = "math_agent.log"
+LOG_FILE = "logs/math_agent.log"
 
 # ========== КОНФИГУРАЦИЯ OPENROUTER ==========
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
@@ -1419,7 +1419,7 @@ def main():
 		wolfram_api_key=os.getenv("WOLFRAM_API_KEY", "ERP3K8L5L3")
 	)
 	
-	with open("math_agent_result.json", "w", encoding="utf-8") as f:
+	with open("results/math_agent_result.json", "w", encoding="utf-8") as f:
 		json.dump(result, f, ensure_ascii=False, indent=2, default=str)
 	
 	print("Результат сохранен в math_agent_result.json")

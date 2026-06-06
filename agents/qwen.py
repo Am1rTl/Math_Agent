@@ -334,7 +334,7 @@ if __name__ == "__main__":
     result = solve_math_problem(problem)
     
     # Сохранение результата
-    with open("math_agent_qwen_result.json", "w", encoding="utf-8") as f:
+    with open("results/math_agent_qwen_result.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2, default=str)
     
     print("\nРезультат сохранен в math_agent_qwen_result.json")
