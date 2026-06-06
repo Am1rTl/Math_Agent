@@ -72,6 +72,3 @@ To start the Flask web server:
 python web/app.py
 ```
 Then open your browser and navigate to `http://localhost:5051`. The web UI allows you to submit tasks, configure API keys, and watch the execution trace live.
-
-## 📄 License
-[Add License Here]
